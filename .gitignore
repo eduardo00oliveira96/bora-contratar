@@ -1,0 +1,77 @@
+# --- Sistemas Operacionais ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --- Editores de Código (VS Code, IntelliJ, Vim, etc) ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# --- Variáveis de Ambiente e Segurança (MUITO IMPORTANTE) ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# --- Logs e Bancos de Dados ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.sqlite3
+*.db
+
+# --- Dependências e Builds ---
+node_modules/
+bower_components/
+vendor/
+dist/
+build/
+out/
+bin/
+obj/
+
+# --- Linguagens Específicas ---
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.pytest_cache/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+
+# C / C++
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+
+# Imagens e Mídia (Opcional, descomente se não quiser versionar imagens)
+# *.png
+# *.jpg
+# *.gif
+# *.mp4
