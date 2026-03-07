@@ -1,6 +1,10 @@
-import streamlit as st
 import sqlite3
 import os
+import ast
+from streamlit_pdf_viewer import pdf_viewer
+import streamlit as st
+
+DB_PATH = "database/bd_bora_contratar.db"
 
 # ==============================
 # CONFIGURAÇÃO E ESTILO (UI)
@@ -11,44 +15,39 @@ def local_css():
     st.markdown("""
         <style>
         .main { background-color: #f8f9fa; }
-        .stExpander { border: 1px solid #e0e0e0; border-radius: 10px; background-color: white; margin-bottom: 1rem; }
+        .stExpander { border: 1px solid #e0e0e0; border-radius: 10px; background-color: white; }
         .candidate-card { 
-            padding: 15px; border-radius: 8px; border-left: 5px solid #007bff; 
-            background: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 10px;
+            padding: 12px; border-radius: 8px; border-left: 5px solid #007bff; 
+            background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 10px;
         }
-        .status-badge {
-            padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;
-        }
+        .status-badge { padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
         .status-aprovado { background-color: #d4edda; color: #155724; }
         .status-reprovado { background-color: #f8d7da; color: #721c24; }
         .status-pendente { background-color: #fff3cd; color: #856404; }
+        
+        /* Ajuste para títulos menores no modal */
+        .modal-header { font-size: 1.8rem; font-weight: bold; color: #1e1e1e; margin-bottom: 0; }
         </style>
     """, unsafe_allow_html=True)
 
 local_css()
 
 # ==============================
-# FUNÇÕES DE DADOS (DEVELOPMENT)
+# FUNÇÕES DE APOIO
 # ==============================
 def get_db_connection():
-    conn = sqlite3.connect("bd_bora_contratar.db", check_same_thread=False)
-    conn.row_factory = sqlite3.Row  # Permite acessar colunas pelo nome
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
     return conn
 
-def update_status(candidato_id, novo_status):
-    conn = get_db_connection()
-    conn.execute("UPDATE candidaturas SET status = ? WHERE id = ?", (novo_status, candidato_id))
-    conn.commit()
-    conn.close()
-
-def update_nota(candidato_id, nota):
-    conn = get_db_connection()
-    conn.execute("UPDATE candidaturas SET nota = ? WHERE id = ?", (nota, candidato_id))
-    conn.commit()
-    conn.close()
+def safe_list_eval(data):
+    try:
+        return ast.literal_eval(data) if data else []
+    except:
+        return []
 
 # ==============================
-# MODAL DE DETALHES (UX)
+# MODAL DE DETALHES (UX REFINADA)
 # ==============================
 @st.dialog("📄 Detalhes do Candidato", width="large")
 def modal_detalhes(candidato_id):
@@ -59,95 +58,125 @@ def modal_detalhes(candidato_id):
         WHERE c.id = ?
     """, (candidato_id,)).fetchone()
     
-    if candidato:
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.title(f"👤 {candidato['nome']}")
-            st.caption(f"Vaga: {candidato['titulo_vaga']}")
-            st.write(f"📧 **E-mail:** {candidato['email']}")
-            st.write(f"📱 **WhatsApp:** {candidato['telefone']}")
-            with st.expander("📑 Resumo do Candidato",):
-                st.write(f"📋 **Resumo:** {candidato['resumo']}",)
-        
-        with col2:
-            st.metric("Avaliação", f"{candidato['nota']}/10" if candidato['nota'] else "S/N")
-            st.write(f"Status: `{candidato['status']}`")
+    if not candidato:
+        st.error("Candidato não encontrado.")
+        return
 
+    # --- HEADER DO MODAL ---
+    st.markdown(f"<p class='modal-header'>👤 {candidato['nome']}</p>", unsafe_allow_html=True)
+    st.caption(f"Candidato para a vaga de **{candidato['titulo_vaga']}**")
+    
+    col_info, col_actions = st.columns([2.2, 1], gap="large")
+
+    with col_info:
+        # Contato Rápido
+        st.markdown(f"📧 `{candidato['email']}` | 📱 `{candidato['telefone']}`")
+        
+        # Resumo Executivo
+
+        # Análise da IA
+        st.markdown("### 🤖 Inteligência Artificial")
+        st.write(candidato['analise_detalhada'] or "Nenhuma análise detalhada.")
+        
+        # Pontos Fortes e Fracos Lado a Lado
+        e1, e2 = st.columns(2)
+        with e1:
+            st.markdown("#### ✅ Pontos Fortes")
+            for item in safe_list_eval(candidato['pontos_fortes']):
+                st.success(item)
+        with e2:
+            st.markdown("#### ⚠️ Gaps de Atenção")
+            for item in safe_list_eval(candidato['gaps_atencao']):
+                st.info(item)
+            
+            
+
+    # Visualizador de PDF Embutido (Evita abrir outro modal)
+    with st.expander("📄 Visualizar Currículo Original"):
+        if candidato['curriculo'] and os.path.exists(candidato['curriculo']):
+            pdf_viewer(candidato['curriculo'], width=700)
+        else:
+            st.warning("Arquivo PDF não localizado.")
+
+    with col_actions:
+        # Painel de Decisão
+        st.markdown("### ⚖️ Avaliação")
+        
+        # Métrica de Score IA
+        score = candidato['nota'] or 0
+        cor_score = "normal" if score < 70 else "inverse"
+        st.metric("Score de Match", f"{score}/100", delta=f"{score-50}% vs média" if score else None)
+        
         st.divider()
         
-        # Ações
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            if st.button("✅ Aprovar", use_container_width=True):
-                update_status(candidato_id, "Aprovado")
-                st.rerun()
-        with c2:
-            if st.button("❌ Reprovar", use_container_width=True, type="secondary"):
-                update_status(candidato_id, "Reprovado")
-                st.rerun()
-        with c3:
-            if candidato['curriculo'] and os.path.exists(candidato['curriculo']):
-                with open(candidato['curriculo'], "rb") as f:
-                    st.download_button("📂 Baixar CV", f, file_name=f"CV_{candidato['nome']}.pdf", use_container_width=True)
-
+        st.markdown("### 💡 Recomendação")
+        st.warning(f"**IA:** {candidato['recomendacao'] or 'Sem recomendação'}")
+        
         st.divider()
-        nova_nota = st.slider("Ajustar Nota", 0, 10, int(candidato['nota'] or 5))
-        if st.button("Salvar Nota"):
-            update_nota(candidato_id, nova_nota)
-            st.success("Nota atualizada!")
+        
+        # Status e Ações
+        st.markdown(f"Status Atual: `{candidato['status']}`")
+        
+        btn_aprov = st.button("✅ Aprovar Candidato", use_container_width=True, type="primary")
+        btn_repro = st.button("❌ Reprovar", use_container_width=True)
+        
+        if btn_aprov:
+            # update_status(candidato_id, "Aprovado") -> implementar logica de db
+            st.success("Candidato Aprovado!")
             st.rerun()
+        if btn_repro:
+            # update_status(candidato_id, "Reprovado") -> implementar logica de db
+            st.rerun()
+
+        st.divider()
+        
+        # Ajuste de Nota Manual
+        nova_nota = st.slider("Ajuste Manual", 0, 100, int(score))
+        if st.button("Salvar Nota Manual", use_container_width=True):
+            # update_nota(candidato_id, nova_nota) -> implementar logica de db
+            st.toast("Nota atualizada!")
 
 # ==============================
 # INTERFACE PRINCIPAL
 # ==============================
 st.title("📊 Painel de Recrutamento")
-st.markdown("Gerencie suas vagas e avalie candidatos com agilidade.")
 
 conn = get_db_connection()
 vagas = conn.execute("SELECT * FROM vagas ORDER BY id DESC").fetchall()
 
 if not vagas:
-    st.info("Nenhuma vaga encontrada no sistema.")
+    st.info("Nenhuma vaga encontrada.")
 else:
     for vaga in vagas:
-        # Busca candidatos da vaga
         candidatos = conn.execute("SELECT * FROM candidaturas WHERE vaga_id = ?", (vaga['id'],)).fetchall()
         
         with st.expander(f"💼 {vaga['titulo']} — {len(candidatos)} candidatos"):
-            # Info da Vaga em colunas
             v_col1, v_col2 = st.columns([3, 1])
             with v_col1:
                 st.markdown(f"**Descrição:** {vaga['descricao']}")
-                st.markdown(f"📍 `{vaga['local_trabalho']}` | 📄 `{vaga['contrato_trabalho']}` | 💰 `{vaga['salario'] if vaga['salario'] is not None else 'Salário a combinar'}`")
+                st.markdown(f"📍 `{vaga['local_trabalho']}` | 💰 `{vaga['salario'] or 'A combinar'}`")
             
-            with v_col2:
-                st.markdown("**Habilidades Requeridas:**")
-                for h in vaga['habilidades'].split('\n'):
-                    if h: st.markdown(f"- {h}")
-
             st.divider()
             
-            # Grid de Candidatos
             if not candidatos:
-                st.caption("Nenhum candidato inscrito.")
+                st.caption("Nenhum inscrito.")
             else:
+                # Exibição em colunas para economizar espaço vertical
                 for cand in candidatos:
-                    # Lógica de cores para status
                     status_class = "status-pendente"
                     if cand['status'] == "Aprovado": status_class = "status-aprovado"
                     elif cand['status'] == "Reprovado": status_class = "status-reprovado"
 
-                    # Card customizado com HTML/CSS
-                    st.markdown(f"""
-                        <div class="candidate-card">
-                            <span style="float: right;" class="status-badge {status_class}">{cand['status']}</span>
-                            <strong>{cand['nome']}</strong><br>
-                            <small>Nota: {cand['nota'] if cand['nota'] else '—'}</small>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Botão de ação (Streamlit Nativo)
-                    if st.button(f"Avaliar {cand['nome']}", key=f"btn_{cand['id']}"):
-                        modal_detalhes(cand['id'])
+                    c_col1, c_col2 = st.columns([4, 1])
+                    with c_col1:
+                        st.markdown(f"""
+                            <div class="candidate-card">
+                                <span style="float: right;" class="status-badge {status_class}">{cand['status']}</span>
+                                <strong>{cand['nome']}</strong> | Score IA: {cand['nota'] or '—'}
+                            </div>
+                        """, unsafe_allow_html=True)
+                    with c_col2:
+                        if st.button("Avaliar", key=f"btn_{cand['id']}", use_container_width=True):
+                            modal_detalhes(cand['id'])
 
 conn.close()

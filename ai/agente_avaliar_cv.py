@@ -2,19 +2,23 @@ import sqlite3
 import sys
 import json
 from pathlib import Path
+import os
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from agno.agent import Agent
 from agno.models.openrouter import OpenRouter
-from prompt_avaliar_cv import prompt_avaliar_cv
 from pprint import pprint
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-# Adiciona a raiz do projeto ao path
-root_dir = Path(__file__).parent.parent
-sys.path.insert(0, str(root_dir))
+# Adiciona a raiz ao sys.path se ainda não estiver
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
 from services.obter_dados_vaga import obter_dados_vaga
-conn = sqlite3.connect("bd_bora_contratar.db", check_same_thread=False)
+from .prompt_avaliar_cv import prompt_avaliar_cv
+
+DB_PATH = "database/bd_bora_contratar.db"
+
+conn = sqlite3.connect(os.path.join(BASE_DIR, DB_PATH), check_same_thread=False)
 cursor = conn.cursor()
 
 load_dotenv()
@@ -72,43 +76,64 @@ class AvaliacaoCV(BaseModel):
 
 
 
-def avaliar_cv(texto_cv:str, dados_vaga:dict):
+def avaliar_cv(texto_cv: str, dados_vaga: dict, vaga_id: int) -> AvaliacaoCV:
+    reposta = None # Inicializa para evitar erro no finally
     
     try: 
         agente_recrutamento = Agent(
             name="Agente de Recrutamento",
-            model=OpenRouter('google/gemini-2.5-flash-lite',verbosity='low',reasoning_effort='medium',
-            max_tokens=4096),
+            model=OpenRouter('google/gemini-2.5-flash-lite'), 
             system_message=prompt_avaliar_cv(),
             output_schema=AvaliacaoCV,
             use_json_mode=True
         )
+        
         mensagem_usuario = f"""
         AVALIAÇÃO DE CANDIDATO PARA VAGA
-
         ## DADOS DA VAGA:
         {dados_vaga}
-
         ## CV DO CANDIDATO:
         {texto_cv}
-
-        Instrução: Analise o CV em relação à vaga e retorne a avaliação estruturada conforme o schema definido.
         """
         
-        
-        proc = agente_recrutamento.run(input=mensagem_usuario)
-        
-        return proc.content
-    except (ValueError,TypeError) as e:
+        processamento = agente_recrutamento.run(input=mensagem_usuario)
+        reposta: AvaliacaoCV = processamento.content
+        return reposta
+
+    except Exception as e:
         print("Erro ao avaliar CV:", e)
+        # Opcional: criar um objeto de fallback para não quebrar o banco
+        return None
         
     finally:
-        cursor.execute("""
-                       insert into avaliacoes_cv (texto_cv, dados_vaga, avaliacao) values(?, ?, ?)
-                       
-                       
-                       """, (texto_cv, str(dados_vaga), proc.content if 'proc' in locals() else None))
-        conn.commit()
+        # Só executa o update se a resposta da IA foi gerada com sucesso
+        if reposta:
+            try:
+                cursor.execute("""
+                    UPDATE candidaturas SET 
+                        status = 'Avaliado',
+                        nota = ?,
+                        analise_detalhada = ?,
+                        pontos_fortes = ?,
+                        gaps_atencao = ?,
+                        recomendacao = ?,
+                        tags = ?,
+                        etapa_entrevista = ?
+                    WHERE vaga_id = ? 
+                """, (
+                    reposta.nota,
+                    reposta.analise_detalhada,
+                    str(reposta.pontos_fortes),
+                    str(reposta.gaps_atencao),
+                    reposta.recomendacao,
+                    str(reposta.tags_extraidas),
+                    "Pré Análise com IA",
+                    vaga_id # Certifique-se que o nome da coluna é vaga_id ou id
+                ))
+                conn.commit()
+            except sqlite3.Error as db_err:
+                print(f"Erro ao atualizar banco: {db_err}")
+        
         
         
 

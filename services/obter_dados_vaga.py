@@ -1,12 +1,14 @@
 import sqlite3
 from pprint import pprint
 
+DB_PATH = "database/bd_bora_contratar.db"
 
-conn = sqlite3.connect("bd_bora_contratar.db")
 
-cursor = conn.cursor()
 
 def obter_dados_vaga(id_vaga):
+    conn = sqlite3.connect(DB_PATH)
+
+    cursor = conn.cursor()
     dados = cursor.execute("""
                select 
                v.titulo,
@@ -33,7 +35,8 @@ def obter_dados_vaga(id_vaga):
     ]
         
     resumo_vaga = {"resumo_vaga": resumo[0]}
-        
+
+    conn.close()
         
     return resumo_vaga
 

@@ -5,7 +5,7 @@ from services.extarir_texto import extrair_texto_pdf
 from services.obter_dados_vaga import obter_dados_vaga
 from ai.agente_avaliar_cv import avaliar_cv
 
-
+DB_PATH = "database/bd_bora_contratar.db"
 UPLOAD_DIR = "upload_curriculos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -13,7 +13,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # ==============================
 # CONEXÃO COM BANCO
 # ==============================
-conn = sqlite3.connect("bd_bora_contratar.db", check_same_thread=False)
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 cursor = conn.cursor()
 
 # ==============================
@@ -201,67 +201,55 @@ def renderizar_detalhes(vaga_id):
             cpf = st.text_input("CPF")
             numero = st.text_input("Número de Telefone")
             email = st.text_input("E-mail")
-            curriculo = st.file_uploader("Anexe seu currículo (PDF)", type=["pdf"],max_upload_size=10)
+            curriculo = st.file_uploader("Anexe seu currículo (PDF)", type=["pdf"])
 
             if st.button("Enviar Candidatura", type="primary", use_container_width=True):
                 if nome and cpf and numero and email and curriculo:
+                    caminho_pdf = os.path.join(UPLOAD_DIR, curriculo.name)
                     
-                    caminho_pdf = os.path.join(
-                        UPLOAD_DIR,
-                        curriculo.name
-                    )
+                    try:
+                        # 1. Salvar o arquivo fisicamente
+                        with open(caminho_pdf, "wb") as f:
+                            f.write(curriculo.read())
 
-                    with open(caminho_pdf, "wb") as f:
-                        f.write(curriculo.read())
+                        # 2. Extrair texto
+                        texto_extraido = extrair_texto_pdf(caminho_pdf)
 
-                    # Extrair texto
-                    texto_extraido = extrair_texto_pdf(caminho_pdf)
+                        # 3. Inserir no Banco com controle de transação
+                        cursor.execute("""
+                            INSERT INTO candidaturas (vaga_id, nome, cpf, telefone, resumo, email, curriculo)
+                            VALUES (?, ?, ?, ?, ?, ?, ?);
+                        """, (
+                            vaga["id"], nome, cpf, numero, 
+                            texto_extraido, email, caminho_pdf
+                        ))
+                        
+                        # Se chegou aqui sem erro, confirma no banco
+                        conn.commit()
+                        
+                        st.success("Candidatura enviada com sucesso!")
+                        st.balloons()
 
-                    cursor.execute("""
-                                   CREATE TABLE IF NOT EXISTS candidaturas (
-                                       id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                       vaga_id INTEGER,
-                                       nome TEXT,
-                                       cpf TEXT,
-                                       telefone TEXT,
-                                       resumo TEXT,
-                                       email TEXT,
-                                       status TEXT DEFAULT 'Em análise',
-                                       feedback TEXT,
-                                       nota INTEGER,
-                                       analise_detalhada TEXT,
-                                       pontos_fortes TEXT,
-                                       gaps_atencao TEXT,
-                                       recomendacao TEXT,
-                                       tags TEXT,
-                                       curriculo TEXT,
-                                       FOREIGN KEY (vaga_id) REFERENCES vagas (id)
-                                   );
-                                   """)
+                        # 4. Processamento da IA (fora da transação principal para não travar o banco)
+                        try:
+                            vaga_info = obter_dados_vaga(vaga["id"])
+                            avaliar_cv(texto_extraido, vaga_info, vaga["id"])
+                        except Exception as e_ia:
+                            st.warning("Candidatura registrada, mas a análise automática falhou. Nossa equipe avaliará manualmente.")
+                            print(f"Erro na IA: {e_ia}")
+
+                    except sqlite3.Error as e_db:
+                        # Se houver erro de banco de dados, desfaz a inserção
+                        conn.rollback()
+                        st.error(f"Erro no banco de dados: {e_db}")
                     
-                    cursor.execute("""
-                                   INSERT INTO candidaturas (vaga_id, nome, cpf, telefone, resumo, email, curriculo)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?);
-                                   """, (
-                                       vaga["id"],
-                                       nome,
-                                       cpf,
-                                       numero,
-                                       texto_extraido,
-                                       email,
-                                       caminho_pdf
-                                   ))
-                    conn.commit()
-                    st.success("Candidatura enviada com sucesso!")
-                    st.balloons()
-                    #analisar curriculo com ia
-                    
-                    vaga_info = obter_dados_vaga(vaga["id"])
-                    avaliar_cv(texto_extraido, vaga_info)
-                    
-                    
+                    except Exception as e:
+                        # Captura qualquer outro erro (extração, sistema de arquivos, etc)
+                        conn.rollback()
+                        st.error(f"Ocorreu um erro inesperado: {e}")
+                        
                 else:
-                    st.warning("Preencha todos os campos.")
+                    st.warning("Por favor, preencha todos os campos e anexe seu currículo.")
 
 
 

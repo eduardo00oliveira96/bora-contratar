@@ -1,9 +1,12 @@
+import os
+
 import streamlit as st
 import sqlite3
 import time
 
+DB_PATH = "database/bd_bora_contratar.db"
 
-conn = sqlite3.connect("bd_bora_contratar.db")
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 
 cursor = conn.cursor()
 
@@ -101,22 +104,6 @@ if submitted:
             salario = None
 
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS vagas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                titulo TEXT,
-                descricao TEXT,
-                local_trabalho TEXT,
-                contrato_trabalho TEXT,
-                requisitos TEXT,
-                habilidades TEXT,
-                salario NUMERIC,
-                divulgacao_salario TEXT,
-                beneficios TEXT,
-                user_created TEXT
-            );
-        """)
-
-        cursor.execute("""
             INSERT INTO vagas (
                 titulo, descricao, local_trabalho, contrato_trabalho,
                 requisitos, habilidades, salario, divulgacao_salario,
@@ -151,7 +138,7 @@ if submitted:
                 del st.session_state[key]
 
         with st.spinner("Salvando...", show_time=True):
-            time.sleep(5)
+            time.sleep(3)
             st.rerun()
         
         
