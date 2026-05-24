@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 from services.obter_dados_vaga import obter_dados_vaga
-from .prompt_avaliar_cv import prompt_avaliar_cv
+from ai.prompt_avaliar_cv import prompt_avaliar_cv
 
 DB_PATH = "database/bd_bora_contratar.db"
 
@@ -119,7 +119,7 @@ def avaliar_cv(texto_cv: str, dados_vaga: dict, vaga_id: int) -> AvaliacaoCV:
                         recomendacao = ?,
                         tags = ?,
                         etapa_entrevista = ?
-                    WHERE vaga_id = ? 
+                    WHERE id = ? 
                 """, (
                     reposta.nota,
                     reposta.analise_detalhada,
@@ -128,7 +128,7 @@ def avaliar_cv(texto_cv: str, dados_vaga: dict, vaga_id: int) -> AvaliacaoCV:
                     reposta.recomendacao,
                     str(reposta.tags_extraidas),
                     "Pré Análise com IA",
-                    vaga_id # Certifique-se que o nome da coluna é vaga_id ou id
+                    vaga_id
                 ))
                 conn.commit()
             except sqlite3.Error as db_err:
@@ -245,11 +245,10 @@ Idiomas
     """
     dados_vaga = obter_dados_vaga(1)
     
-    resultado_avaliacao:AvaliacaoCV = avaliar_cv(texto_cv, dados_vaga)
+    resultado_avaliacao:AvaliacaoCV = avaliar_cv(texto_cv, dados_vaga,vaga_id=3)
     
     print(resultado_avaliacao.nota)
     print(resultado_avaliacao.analise_detalhada)
     print(resultado_avaliacao.pontos_fortes)
     print(resultado_avaliacao.gaps_atencao)
     print(resultado_avaliacao.recomendacao)
-    

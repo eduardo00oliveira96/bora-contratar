@@ -1,31 +1,25 @@
-import streamlit as st
-import pathlib
+from flask import Flask
+from routes.public import public_bp
+from routes.admin import admin_bp
+from models.db import init_db
+from dotenv import load_dotenv
 
-st.set_page_config(
-    page_title="Portal Bora Contratar",
-    page_icon="💼",
-    layout="wide"
-)
+# Load environment variables
+load_dotenv()
 
-# Definição das páginas
-lista_page = st.Page(
-    "pages\cadastro_vagas.py",
-    title="Cadastro de Vagas",
-    icon="📋",
-    default=True
-)
+def create_app():
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'super-secret-key-change-in-production'
+    
+    # Initialize DB (creates file and tables if not exist)
+    init_db()
+    
+    # Register blueprints
+    app.register_blueprint(public_bp)
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+    
+    return app
 
-detalhe_page = st.Page(
-    "pages\concorrer_vaga.py",
-    title="Lista de Vagas",
-    icon="📂"
-)
-
-avaliacao_page = st.Page(
-    pathlib.Path("pages/avaliar_curriculos.py"),
-    title="Avaliação de Currículos",
-    icon="📊")
-
-# Sistema de Navegação
-pg = st.navigation([lista_page, detalhe_page, avaliacao_page])
-pg.run()
+if __name__ == '__main__':
+    app = create_app()
+    app.run(debug=True, port=5000)
