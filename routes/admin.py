@@ -11,6 +11,7 @@ from models.vaga import (
 from models.candidatura import get_candidaturas_by_vaga, get_candidatura_by_id, update_candidatura_status, get_all_candidaturas_with_vaga
 from models.usuario import listar_usuarios_do_tenant
 from models.ficha_tecnica import listar_fichas, get_ficha_by_id, criar_ficha, atualizar_ficha, arquivar_ficha
+from models.dashboard import get_kpis, get_vagas_por_status, get_candidatos_por_status, get_notas_distribuicao, get_vagas_por_mes, get_recentes
 from services.upload_curriculo import get_curriculo_url
 
 admin_bp = Blueprint('admin', __name__)
@@ -45,6 +46,14 @@ def dashboard():
     if papel == "aprovador":
         solicitacoes_aprovar = get_solicitacoes_por_papel("aprovador", usuario_id)
 
+    # Chart data
+    kpis = get_kpis()
+    vagas_por_status = get_vagas_por_status()
+    candidatos_por_status = get_candidatos_por_status()
+    notas_dist = get_notas_distribuicao()
+    vagas_por_mes = get_vagas_por_mes()
+    recentes_vagas, recentes_cands = get_recentes()
+
     return render_template('admin/dashboard.html',
                          vagas=vagas,
                          vagas_solicitadas=vagas_solicitadas,
@@ -52,7 +61,14 @@ def dashboard():
                          solicitacoes_aprovacao=solicitacoes_aprovacao,
                          solicitacoes_aprovadas=solicitacoes_aprovadas,
                          solicitacoes_aprovar=solicitacoes_aprovar,
-                         total_candidatos=total_candidatos)
+                         total_candidatos=total_candidatos,
+                         kpis=kpis,
+                         vagas_por_status=vagas_por_status,
+                         candidatos_por_status=candidatos_por_status,
+                         notas_dist=notas_dist,
+                         vagas_por_mes=vagas_por_mes,
+                         recentes_vagas=recentes_vagas,
+                         recentes_cands=recentes_cands)
 
 
 @admin_bp.route('/vagas')
