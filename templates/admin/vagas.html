@@ -1,0 +1,127 @@
+{% extends "admin_base.html" %}
+{% block title %}Vagas | Bora Contratar{% endblock %}
+
+{% block content %}
+{% set papel = g.usuario.papel %}
+
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Vagas</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ vagas|length }} vaga(s) encontrada(s)</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{{ url_for('admin.vaga_nova') }}"
+       class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 text-sm">
+      <i class="fa-solid fa-plus"></i> Nova Vaga
+    </a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="mb-6 flex flex-col sm:flex-row gap-3">
+  <div class="relative flex-1">
+    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+    <input type="text" id="searchInput" placeholder="Buscar por título..."
+      class="w-full pl-9 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+  </div>
+  <select id="statusFilter"
+    class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+    <option value="">Todos os status</option>
+    <option value="publicada">Publicada</option>
+    <option value="solicitada">Solicitada</option>
+    <option value="em_triagem">Em Triagem</option>
+    <option value="aguardando_aprovacao">Aguardando Aprovação</option>
+    <option value="aprovada">Aprovada</option>
+    <option value="em_recrutamento">Em Recrutamento</option>
+    <option value="rascunho">Rascunho</option>
+    <option value="encerrada">Encerrada</option>
+  </select>
+</div>
+
+<!-- Vagas Grid -->
+<div id="vagasGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+  {% for vaga in vagas %}
+  <div class="vaga-card bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 transition-all duration-200 hover:shadow-md hover:border-brand-200 dark:hover:border-brand-800"
+       data-titulo="{{ vaga.titulo|lower }}" data-status="{{ vaga.status_vaga }}">
+    <div class="flex items-start justify-between mb-3">
+      <h3 class="font-semibold text-slate-900 dark:text-white leading-tight">{{ vaga.titulo }}</h3>
+      <span class="ml-2 px-2 py-0.5 text-[10px] font-semibold rounded-full flex-shrink-0
+        {% if vaga.status_vaga == 'publicada' %}bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300
+        {% elif vaga.status_vaga == 'solicitada' %}bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300
+        {% elif vaga.status_vaga == 'em_triagem' %}bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300
+        {% elif vaga.status_vaga == 'aguardando_aprovacao' %}bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300
+        {% elif vaga.status_vaga in ('aprovada', 'aprovada_ressalvas') %}bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300
+        {% elif vaga.status_vaga == 'em_recrutamento' %}bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300
+        {% elif vaga.status_vaga == 'rascunho' %}bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300
+        {% else %}bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300{% endif %}">
+        {{ vaga.status_vaga | replace('_', ' ') | title }}
+      </span>
+    </div>
+
+    <div class="space-y-1.5 text-sm text-slate-500 dark:text-slate-400 mb-4">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-location-dot w-4 text-center text-xs"></i>
+        <span>{{ vaga.local_trabalho or '—' }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-file-contract w-4 text-center text-xs"></i>
+        <span>{{ vaga.tipo_contrato or '—' }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-user w-4 text-center text-xs"></i>
+        <span>{{ vaga.user_created or '—' }}</span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+      <a href="{{ url_for('solicitacao.detalhes', id=vaga.id) }}"
+         class="flex-1 text-center text-sm px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors">
+        Detalhes
+      </a>
+      {% if vaga.status_vaga in ('publicada', 'rascunho') and papel in ('admin', 'rh', 'superadmin') %}
+      <a href="{{ url_for('admin.vaga_editar', id=vaga.id) }}"
+         class="px-3 py-1.5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm" title="Editar">
+        <i class="fa-solid fa-pen-to-square"></i>
+      </a>
+      {% endif %}
+      {% if vaga.status_vaga in ('publicada', 'em_recrutamento') and papel in ('admin', 'rh', 'superadmin') %}
+      <a href="{{ url_for('admin.vaga_candidatos', id=vaga.id) }}"
+         class="px-3 py-1.5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm" title="Candidatos">
+        <i class="fa-solid fa-users"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="md:col-span-2 xl:col-span-3 text-center py-16 text-slate-500 dark:text-slate-400">
+    <i class="fa-solid fa-briefcase text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
+    <p class="text-lg font-medium">Nenhuma vaga encontrada</p>
+    <p class="text-sm mt-1">Crie sua primeira vaga para começar.</p>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var searchInput = document.getElementById('searchInput');
+  var statusFilter = document.getElementById('statusFilter');
+  var cards = document.querySelectorAll('.vaga-card');
+
+  function filterCards() {
+    var search = (searchInput.value || '').toLowerCase();
+    var status = statusFilter.value;
+
+    cards.forEach(function(card) {
+      var titulo = card.getAttribute('data-titulo') || '';
+      var cardStatus = card.getAttribute('data-status') || '';
+      var matchSearch = !search || titulo.includes(search);
+      var matchStatus = !status || cardStatus === status;
+      card.style.display = (matchSearch && matchStatus) ? '' : 'none';
+    });
+  }
+
+  searchInput.addEventListener('input', filterCards);
+  statusFilter.addEventListener('change', filterCards);
+});
+</script>
+{% endblock %}

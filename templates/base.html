@@ -58,6 +58,7 @@
 
 <body class="text-slate-800 dark:text-slate-200 antialiased min-h-screen flex flex-col transition-colors duration-200">
 
+{% block layout %}
     <!-- Header / Navbar -->
     <header
         class="bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-colors duration-200">
@@ -72,14 +73,58 @@
                     </a>
                 </div>
                 <!-- Navigation -->
-                <nav class="hidden md:flex space-x-8">
+                <nav class="hidden md:flex items-center space-x-6">
                     <a href="{{ url_for('public.index') }}"
                         class="text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 font-medium transition-colors">Vagas
                         Abertas</a>
+                    {% if g.usuario %}
                     <a href="{{ url_for('admin.dashboard') }}"
-                        class="text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 font-medium transition-colors">Área
-                        do RH <i class="fa-solid fa-lock ml-1 text-xs"></i></a>
+                        class="text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 font-medium transition-colors">
+                        <i class="fa-solid fa-gauge-high mr-1"></i> Dashboard
+                    </a>
+                    {% if g.usuario.papel in ('admin', 'superadmin') %}
+                    <a href="{{ url_for('auth.gerenciar_usuarios') }}"
+                        class="text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 font-medium transition-colors">
+                        <i class="fa-solid fa-users-gear mr-1"></i> Usuários
+                    </a>
+                    {% endif %}
+                    {% if g.usuario.papel in ('admin', 'rh', 'superadmin') %}
+                    <a href="{{ url_for('admin.fichas_listar') }}"
+                        class="text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 font-medium transition-colors">
+                        <i class="fa-solid fa-file-lines mr-1"></i> Fichas
+                    </a>
+                    {% endif %}
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}"
+                        class="text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 font-medium transition-colors">
+                        <i class="fa-solid fa-lock mr-1"></i> Área RH
+                    </a>
+                    {% endif %}
                 </nav>
+
+                <!-- User Menu -->
+                <div class="flex items-center gap-4">
+                    {% if g.usuario %}
+                    <div class="hidden md:flex items-center gap-3">
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">{{ g.usuario.nome }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                <span class="px-1.5 py-0.5 rounded text-xs font-semibold
+                                    {% if g.usuario.papel == 'superadmin' %}bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300
+                                    {% elif g.usuario.papel == 'admin' %}bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300
+                                    {% elif g.usuario.papel == 'rh' %}bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300
+                                    {% else %}bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300{% endif %}">
+                                    {{ g.usuario.papel }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('auth.logout') }}"
+                        class="text-sm text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </header>
@@ -121,6 +166,7 @@
             </p>
         </div>
     </footer>
+{% endblock %}
 
 </body>
 

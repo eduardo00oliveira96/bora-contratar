@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}  
 
 {% block title %}Candidatos: {{ vaga.titulo }} | Bora Contratar{% endblock %}
 
@@ -52,12 +52,12 @@
             </div>
 
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1 pr-20 truncate transition-colors"
-                title="{{ cand.nome }}">{{ cand.nome }}
+                title="{{ cand.candidatos.nome if cand.candidatos else cand.nome }}">{{ cand.candidatos.nome if cand.candidatos else cand.nome }}
             </h3>
 
             <div class="text-sm text-slate-600 dark:text-slate-400 mb-4 transition-colors">
-                <p><i class="fa-regular fa-envelope w-5"></i> {{ cand.email }}</p>
-                <p><i class="fa-solid fa-phone w-5"></i> {{ cand.telefone }}</p>
+                <p><i class="fa-regular fa-envelope w-5"></i> {{ cand.candidatos.email if cand.candidatos else cand.email }}</p>
+                <p><i class="fa-solid fa-phone w-5"></i> {{ cand.candidatos.telefone if cand.candidatos else cand.telefone }}</p>
             </div>
 
             <div

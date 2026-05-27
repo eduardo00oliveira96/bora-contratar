@@ -1,41 +1,181 @@
-{% extends "base.html" %}
-
-{% block title %}Painel RH | Bora Contratar{% endblock %}
+{% extends "admin_base.html" %}  
+{% block title %}Dashboard | Bora Contratar{% endblock %}
 
 {% block content %}
-<div
-    class="mb-8 flex justify-between items-center bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+{% set papel = g.usuario.papel %}
+{% set nome = g.usuario.nome %}
+
+<div class="mb-8 flex justify-between items-center bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white transition-colors">Dashboard Administrativo
+        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white transition-colors">
+            {% if papel == 'gestor' %}Olá, {{ nome }}! Suas Solicitações
+            {% elif papel == 'aprovador' %}Aprovações Pendentes
+            {% elif papel == 'rh' %}Painel de Recrutamento
+            {% elif papel == 'admin' %}Dashboard da Empresa
+            {% elif papel == 'superadmin' %}Painel Global
+            {% else %}Dashboard{% endif %}
         </h1>
-        <p class="text-slate-500 dark:text-slate-400 mt-1 transition-colors">Gerencie suas vagas e acompanhe os
-            candidatos</p>
+        <p class="text-slate-500 dark:text-slate-400 mt-1 transition-colors">
+            {% if papel == 'gestor' %}Acompanhe suas solicitações de contratação.
+            {% elif papel == 'aprovador' %}Revise e aprove as solicitações pendentes.
+            {% elif papel == 'rh' %}Gerencie vagas, avalie candidatos e aprove solicitações.
+            {% elif papel == 'admin' %}Gerencie sua equipe e acompanhe métricas.
+            {% elif papel == 'superadmin' %}Gerencie todos os tenants do sistema.
+            {% endif %}
+        </p>
     </div>
-    <a href="{{ url_for('admin.vaga_nova') }}"
+    <a href="{{ url_for('solicitacao.nova') }}"
         class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-5 rounded-lg shadow-sm transition-colors flex items-center">
-        <i class="fa-solid fa-plus mr-2"></i> Nova Vaga
+        <i class="fa-solid fa-plus mr-2"></i>
+        {% if papel == 'gestor' %}Solicitar Contratação{% else %}Nova Solicitação{% endif %}
     </a>
 </div>
 
-<!-- Stats (Mocked or Real) -->
+{% if papel in ('admin', 'rh', 'superadmin') and vagas_solicitadas %}
+<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 mb-6 transition-colors">
+    <div class="flex items-center gap-3 mb-4">
+        <i class="fa-solid fa-clock text-amber-600 dark:text-amber-400 text-xl"></i>
+        <h2 class="text-lg font-bold text-amber-800 dark:text-amber-300">Solicitações Recebidas ({{ vagas_solicitadas|length }})</h2>
+    </div>
+    <div class="space-y-3">
+        {% for v in vagas_solicitadas %}
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-amber-100 dark:border-amber-900/30 flex justify-between items-center transition-colors">
+            <div>
+                <p class="font-semibold text-slate-900 dark:text-white">{{ v.titulo }}</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ v.user_created }} — {{ v.tipo_solicitacao | replace('_', ' ') | title }}</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ url_for('solicitacao.triar', id=v.id) }}"
+                    class="text-sm px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors">
+                    Triar
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if papel in ('admin', 'rh', 'superadmin') and solicitacoes_triagem %}
+<div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 mb-6 transition-colors">
+    <div class="flex items-center gap-3 mb-4">
+        <i class="fa-solid fa-list-check text-blue-600 dark:text-blue-400 text-xl"></i>
+        <h2 class="text-lg font-bold text-blue-800 dark:text-blue-300">Em Triagem ({{ solicitacoes_triagem|length }})</h2>
+    </div>
+    <div class="space-y-3">
+        {% for v in solicitacoes_triagem %}
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-blue-100 dark:border-blue-900/30 flex justify-between items-center">
+            <div>
+                <p class="font-semibold text-slate-900 dark:text-white">{{ v.titulo }}</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ v.user_created }}</p>
+            </div>
+            <a href="{{ url_for('solicitacao.detalhes', id=v.id) }}"
+                class="text-sm px-3 py-1.5 border border-blue-300 dark:border-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
+                Detalhes
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if papel == 'aprovador' and solicitacoes_aprovar %}
+<div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl p-6 mb-6 transition-colors">
+    <div class="flex items-center gap-3 mb-4">
+        <i class="fa-solid fa-check-double text-purple-600 dark:text-purple-400 text-xl"></i>
+        <h2 class="text-lg font-bold text-purple-800 dark:text-purple-300">Aprovações Pendentes ({{ solicitacoes_aprovar|length }})</h2>
+    </div>
+    <div class="space-y-3">
+        {% for v in solicitacoes_aprovar %}
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-purple-100 dark:border-purple-900/30 flex justify-between items-center">
+            <div>
+                <p class="font-semibold text-slate-900 dark:text-white">{{ v.titulo }}</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Solicitado por {{ v.user_created }}</p>
+            </div>
+            <a href="{{ url_for('solicitacao.detalhes', id=v.id) }}"
+                class="text-sm px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                Aprovar / Reprovar
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if papel in ('admin', 'rh', 'superadmin') and solicitacoes_aprovacao %}
+<div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl p-6 mb-6 transition-colors">
+    <div class="flex items-center gap-3 mb-4">
+        <i class="fa-solid fa-hourglass-half text-purple-600 dark:text-purple-400 text-xl"></i>
+        <h2 class="text-lg font-bold text-purple-800 dark:text-purple-300">Aguardando Aprovação ({{ solicitacoes_aprovacao|length }})</h2>
+    </div>
+    <div class="space-y-3">
+        {% for v in solicitacoes_aprovacao %}
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-purple-100 dark:border-purple-900/30 flex justify-between items-center">
+            <div>
+                <p class="font-semibold text-slate-900 dark:text-white">{{ v.titulo }}</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ v.user_created }}</p>
+            </div>
+            <a href="{{ url_for('solicitacao.detalhes', id=v.id) }}"
+                class="text-sm px-3 py-1.5 border border-purple-300 dark:border-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
+                Acompanhar
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if papel in ('admin', 'rh', 'superadmin') and solicitacoes_aprovadas %}
+<div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 mb-6 transition-colors">
+    <div class="flex items-center gap-3 mb-4">
+        <i class="fa-solid fa-check-circle text-emerald-600 dark:text-emerald-400 text-xl"></i>
+        <h2 class="text-lg font-bold text-emerald-800 dark:text-emerald-300">Aprovadas — Prontas para Recrutamento ({{ solicitacoes_aprovadas|length }})</h2>
+    </div>
+    <div class="space-y-3">
+        {% for v in solicitacoes_aprovadas %}
+        <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/30 flex justify-between items-center">
+            <div>
+                <p class="font-semibold text-slate-900 dark:text-white">{{ v.titulo }}</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ v.status_vaga | replace('_', ' ') | title }}</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ url_for('solicitacao.detalhes', id=v.id) }}"
+                    class="text-sm px-3 py-1.5 border border-emerald-300 dark:border-emerald-600 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">
+                    Detalhes
+                </a>
+                {% if v.status_vaga in ('aprovada', 'aprovada_ressalvas') %}
+                <form action="{{ url_for('solicitacao.iniciar_recrutamento', id=v.id) }}" method="POST" class="inline">
+                    <button type="submit"
+                        class="text-sm px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors">
+                        Recrutar
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Stats -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div
-        class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-colors">
-        <div
-            class="w-14 h-14 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 rounded-xl flex items-center justify-center text-2xl transition-colors">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-colors">
+        <div class="w-14 h-14 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 rounded-xl flex items-center justify-center text-2xl transition-colors">
             <i class="fa-solid fa-briefcase"></i>
         </div>
         <div>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 transition-colors">Vagas Ativas</p>
-            <p class="text-2xl font-bold text-slate-900 dark:text-white transition-colors">{{ vagas|selectattr("ativo",
-                "equalto", 1)|list|length }}</p>
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 transition-colors">
+                {% if papel == 'gestor' %}Solicitações Ativas{% else %}Vagas Ativas{% endif %}
+            </p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white transition-colors">
+                {{ vagas|selectattr("status_vaga", "equalto", "publicada")|list|length if papel not in ('gestor','aprovador') else vagas|length }}
+            </p>
         </div>
     </div>
 
-    <div
-        class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-colors">
-        <div
-            class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center text-2xl transition-colors">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-colors">
+        <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center text-2xl transition-colors">
             <i class="fa-solid fa-users"></i>
         </div>
         <div>
@@ -44,45 +184,34 @@
         </div>
     </div>
 
-    <div
-        class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-colors">
-        <div
-            class="w-14 h-14 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center text-2xl transition-colors">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4 transition-colors">
+        <div class="w-14 h-14 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center text-2xl transition-colors">
             <i class="fa-solid fa-clock-rotate-left"></i>
         </div>
         <div>
             <p class="text-sm font-medium text-slate-500 dark:text-slate-400 transition-colors">Vagas Encerradas</p>
-            <p class="text-2xl font-bold text-slate-900 dark:text-white transition-colors">{{ vagas|selectattr("ativo",
-                "equalto", 0)|list|length }}</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white transition-colors">{{ vagas|selectattr("status_vaga", "equalto", "encerrada")|list|length }}</p>
         </div>
     </div>
 </div>
 
-<!-- Tabela de Vagas -->
-<div
-    class="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden transition-colors">
-    <div
-        class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center transition-colors">
-        <h3 class="text-lg font-bold text-slate-900 dark:text-white transition-colors">Suas Vagas Recentes</h3>
+<!-- Tabela de Vagas (para gestor/rh/admin/superadmin) -->
+{% if papel != 'aprovador' %}
+<div class="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden transition-colors">
+    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center transition-colors">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white transition-colors">
+            {% if papel == 'gestor' %}Minhas Solicitações{% else %}Todas as Vagas{% endif %}
+        </h3>
     </div>
 
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
             <thead class="bg-white dark:bg-slate-800 transition-colors">
                 <tr>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Título
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Local/Tipo</th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Ações
-                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Título</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Local/Tipo</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Ações</th>
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700 transition-colors">
@@ -90,43 +219,52 @@
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ vaga.titulo }}</div>
-                        <div class="text-sm text-slate-500 dark:text-slate-400">ID: {{ vaga.id }}</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400">{{ vaga.id[:8] }}...</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm text-slate-900 dark:text-white">{{ vaga.local_trabalho }}</div>
-                        <div class="text-sm text-slate-500 dark:text-slate-400">{{ vaga.contrato_trabalho }}</div>
+                        <div class="text-sm text-slate-500 dark:text-slate-400">{{ vaga.tipo_contrato }}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        {% if vaga.ativo %}
-                        <span
-                            class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">
-                            Ativa
-                        </span>
+                        {% if vaga.status_vaga == 'publicada' %}
+                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">Publicada</span>
+                        {% elif vaga.status_vaga == 'solicitada' %}
+                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">Solicitada</span>
+                        {% elif vaga.status_vaga == 'em_triagem' %}
+                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">Em Triagem</span>
+                        {% elif vaga.status_vaga == 'aguardando_aprovacao' %}
+                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300">Aguardando Aprovação</span>
+                        {% elif vaga.status_vaga in ('aprovada', 'aprovada_ressalvas') %}
+                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">Aprovada</span>
+                        {% elif vaga.status_vaga == 'em_recrutamento' %}
+                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300">Em Recrutamento</span>
+                        {% elif vaga.status_vaga == 'rascunho' %}
+                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-300">Rascunho</span>
                         {% else %}
-                        <span
-                            class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-300">
-                            Encerrada
-                        </span>
+                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300">Encerrada</span>
                         {% endif %}
                     </td>
-                    <td
-                        class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium border-l border-slate-50 dark:border-slate-800 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium transition-colors">
+                        <a href="{{ url_for('solicitacao.detalhes', id=vaga.id) }}"
+                            class="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300 mr-4 transition-colors" title="Detalhes">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+                        {% if vaga.status_vaga in ('publicada', 'rascunho') and papel in ('admin', 'rh', 'superadmin') %}
                         <a href="{{ url_for('admin.vaga_candidatos', id=vaga.id) }}"
-                            class="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300 mr-4 transition-colors"
-                            title="Ver Candidatos">
-                            <i class="fa-solid fa-users"></i> Candidatos
+                            class="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300 mr-4 transition-colors" title="Ver Candidatos">
+                            <i class="fa-solid fa-users"></i>
                         </a>
                         <a href="{{ url_for('admin.vaga_editar', id=vaga.id) }}"
-                            class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
-                            title="Editar">
+                            class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors" title="Editar">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% else %}
                 <tr>
                     <td colspan="4" class="px-6 py-10 text-center text-slate-500 dark:text-slate-400">
-                        Nenhuma vaga encontrada. Crie sua primeira vaga!
+                        Nenhuma vaga encontrada.
                     </td>
                 </tr>
                 {% endfor %}
@@ -134,4 +272,5 @@
         </table>
     </div>
 </div>
+{% endif %}
 {% endblock %}

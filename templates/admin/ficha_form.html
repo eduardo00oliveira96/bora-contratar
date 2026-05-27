@@ -1,0 +1,95 @@
+{% extends "admin_base.html" %}  
+{% block title %}{% if ficha %}Editar{% else %}Nova{% endif %} Ficha Técnica | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{{ url_for('admin.fichas_listar') }}"
+        class="text-brand-600 hover:text-brand-700 font-medium flex items-center">
+        <i class="fa-solid fa-arrow-left mr-2"></i> Voltar para Fichas Técnicas
+    </a>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 max-w-4xl mx-auto transition-colors">
+    <div class="mb-8 border-b border-slate-100 dark:border-slate-700 pb-6">
+        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">
+            {% if ficha %}Editar Ficha: {{ ficha.titulo }}{% else %}Nova Ficha Técnica{% endif %}
+        </h1>
+        <p class="text-slate-500 dark:text-slate-400 mt-1">Template de cargo que ficará disponível para os gestores selecionarem.</p>
+    </div>
+
+    <form method="POST" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="md:col-span-2">
+                <label for="titulo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Título do Cargo *</label>
+                <input type="text" id="titulo" name="titulo" required value="{{ ficha.titulo if ficha else '' }}"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+            </div>
+
+            <div>
+                <label for="local_trabalho" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Local de Trabalho</label>
+                <select id="local_trabalho" name="local_trabalho"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                    <option value="">Selecione...</option>
+                    <option value="Remoto" {% if ficha and ficha.local_trabalho == 'Remoto' %}selected{% endif %}>Remoto</option>
+                    <option value="Presencial" {% if ficha and ficha.local_trabalho == 'Presencial' %}selected{% endif %}>Presencial</option>
+                    <option value="Híbrido" {% if ficha and ficha.local_trabalho == 'Híbrido' %}selected{% endif %}>Híbrido</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="contrato_trabalho" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo de Contrato</label>
+                <select id="contrato_trabalho" name="contrato_trabalho"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                    <option value="">Selecione...</option>
+                    <option value="CLT" {% if ficha and ficha.tipo_contrato == 'CLT' %}selected{% endif %}>CLT</option>
+                    <option value="PJ" {% if ficha and ficha.tipo_contrato == 'PJ' %}selected{% endif %}>PJ</option>
+                    <option value="Temporário" {% if ficha and ficha.tipo_contrato == 'Temporário' %}selected{% endif %}>Temporário</option>
+                    <option value="Estágio" {% if ficha and ficha.tipo_contrato == 'Estágio' %}selected{% endif %}>Estágio</option>
+                </select>
+            </div>
+
+            <div class="md:col-span-2">
+                <label for="descricao" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrição da Vaga</label>
+                <textarea id="descricao" name="descricao" rows="4"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">{{ ficha.descricao if ficha else '' }}</textarea>
+            </div>
+
+            <div class="md:col-span-2">
+                <label for="requisitos" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Responsabilidades e Requisitos</label>
+                <textarea id="requisitos" name="requisitos" rows="3"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">{{ ficha.requisitos if ficha else '' }}</textarea>
+            </div>
+
+            <div class="md:col-span-2">
+                <label for="habilidades" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Habilidades Necessárias</label>
+                <textarea id="habilidades" name="habilidades" rows="3"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">{{ ficha.habilidades if ficha else '' }}</textarea>
+            </div>
+
+            <div>
+                <label for="salario" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Salário (opcional)</label>
+                <input type="number" id="salario" name="salario" step="100" value="{{ ficha.salario if ficha and ficha.salario else '' }}"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+            </div>
+
+            <div>
+                <label for="beneficios" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Benefícios</label>
+                <input type="text" id="beneficios" name="beneficios" value="{{ ficha.beneficios if ficha else '' }}"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                    placeholder="Vale Refeição, Plano de Saúde, etc">
+            </div>
+        </div>
+
+        <div class="pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+            <a href="{{ url_for('admin.fichas_listar') }}"
+                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium py-2.5 px-6 rounded-lg transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-sm transition-colors">
+                {% if ficha %}Salvar Alterações{% else %}Criar Ficha Técnica{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

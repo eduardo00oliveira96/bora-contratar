@@ -1,0 +1,83 @@
+{% extends "admin_base.html" %}  
+{% block title %}Solicitar Contratação | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{{ url_for('admin.dashboard') }}"
+        class="text-brand-600 hover:text-brand-700 font-medium flex items-center">
+        <i class="fa-solid fa-arrow-left mr-2"></i> Voltar para o Dashboard
+    </a>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 max-w-3xl mx-auto transition-colors">
+    <div class="mb-8 border-b border-slate-100 dark:border-slate-700 pb-6">
+        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">Solicitar Contratação</h1>
+        <p class="text-slate-500 dark:text-slate-400 mt-1">Preencha os dados básicos. O RH completará a ficha técnica do cargo.</p>
+    </div>
+
+    <form method="POST" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="md:col-span-2">
+                <label for="titulo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Título do Cargo *</label>
+                <input type="text" id="titulo" name="titulo" required
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+            </div>
+
+            <div>
+                <label for="tipo_solicitacao" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo de Solicitação *</label>
+                <select id="tipo_solicitacao" name="tipo_solicitacao" required
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                    <option value="">Selecione...</option>
+                    <option value="aumento_quadro">Aumento de Quadro</option>
+                    <option value="substituicao">Substituição</option>
+                    <option value="temporario">Temporário / Projeto</option>
+                    <option value="estagio">Estágio / Jovem Aprendiz</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="centro_custo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Centro de Custo / Orçamento</label>
+                <input type="text" id="centro_custo" name="centro_custo"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                    placeholder="Ex: CC-2024-0123">
+            </div>
+
+            <div>
+                <label for="previsao_inicio" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Previsão de Início</label>
+                <input type="date" id="previsao_inicio" name="previsao_inicio"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+            </div>
+
+            <div class="md:col-span-2">
+                <label for="justificativa" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Justificativa da Necessidade *</label>
+                <textarea id="justificativa" name="justificativa" rows="3" required
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                    placeholder="Explique por que esta contratação é necessária..."></textarea>
+            </div>
+
+            <div class="md:col-span-2">
+                <label for="ficha_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ficha Técnica do Cargo</label>
+                <select id="ficha_id" name="ficha_id"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                    <option value="">Selecione uma ficha...</option>
+                    {% for f in fichas %}
+                    <option value="{{ f.id }}">{{ f.titulo }} — {{ f.local_trabalho or '' }} {{ '(' + f.tipo_contrato + ')' if f.tipo_contrato else '' }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-slate-400 mt-1">Fichas cadastradas pelo RH. Se não encontrar, selecione "Outro" e o RH preencherá na triagem.</p>
+            </div>
+        </div>
+
+        <div class="pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+            <a href="{{ url_for('admin.dashboard') }}"
+                class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium py-2.5 px-6 rounded-lg transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-8 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-paper-plane"></i> Enviar Solicitação
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

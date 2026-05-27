@@ -70,6 +70,14 @@ target/
 *.exe
 *.dll
 *.so
+skills
+.opencode
+__pycache__
+.venv
+node_modules
+package.json
+package-lock.json
+bun.lock
 
 # Imagens e Mídia (Opcional, descomente se não quiser versionar imagens)
 # *.png

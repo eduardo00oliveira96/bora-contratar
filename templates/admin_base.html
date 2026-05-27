@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block layout %}
+{% set papel = g.usuario.papel if g.usuario else '' %}
+{% set nome = g.usuario.nome if g.usuario else '' %}
+{% set iniciais = nome[:1] if nome else '?' %}
+
+<div class="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+
+  <!-- Mobile backdrop -->
+  <div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-60 lg:w-64 flex-shrink-0 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0">
+
+    <!-- Logo -->
+    <div class="flex items-center justify-between h-16 px-4 lg:px-5 border-b border-slate-800">
+      <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
+          <i class="fa-solid fa-briefcase text-white text-sm"></i>
+        </div>
+        <div>
+          <span class="text-base font-bold tracking-tight">Bora</span>
+          <span class="text-base font-light text-slate-300">Contratar</span>
+        </div>
+      </a>
+      <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white transition-colors p-1">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Scrollable nav area -->
+    <nav class="flex-1 overflow-y-auto py-4 px-2 lg:px-3 space-y-0.5 scrollbar-thin scrollbar-thumb-slate-700">
+
+      <!-- Dashboard — all roles -->
+      <a href="{{ url_for('admin.dashboard') }}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint == 'admin.dashboard' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-chart-pie w-5 text-center text-sm"></i>
+        <span class="text-sm">Dashboard</span>
+      </a>
+
+      <!-- ===== RECRUTAMENTO ===== -->
+      {% if papel in ('admin', 'rh', 'superadmin') %}
+      <div class="pt-5 pb-1.5 px-3">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Recrutamento</p>
+      </div>
+
+      <a href="{{ url_for('admin.vagas_listar') }}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint == 'admin.vagas_listar' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-briefcase w-5 text-center text-sm"></i>
+        <span class="text-sm">Vagas</span>
+      </a>
+      <a href="{{ url_for('admin.vaga_nova') }}"
+         class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 ml-6
+                {% if request.endpoint == 'admin.vaga_nova' %}text-brand-400 font-medium
+                {% else %}text-slate-400 hover:text-white{% endif %}">
+        <i class="fa-solid fa-plus w-5 text-center text-[10px]"></i>
+        <span class="text-xs">Nova Vaga</span>
+      </a>
+
+      <a href="{{ url_for('admin.candidaturas_listar') }}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint == 'admin.candidaturas_listar' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-users w-5 text-center text-sm"></i>
+        <span class="text-sm">Candidaturas</span>
+      </a>
+
+      <a href="{{ url_for('admin.fichas_listar') }}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint and 'fichas' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-file-lines w-5 text-center text-sm"></i>
+        <span class="text-sm">Fichas Técnicas</span>
+      </a>
+      {% endif %}
+
+      <!-- ===== SOLICITAÇÕES ===== -->
+      {% if papel in ('admin', 'rh', 'superadmin', 'gestor', 'aprovador') %}
+      <div class="pt-5 pb-1.5 px-3">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Solicitações</p>
+      </div>
+      {% endif %}
+
+      {% if papel == 'gestor' %}
+      <a href="{{ url_for('admin.dashboard') }}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint and 'solicitacao' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-clock w-5 text-center text-sm"></i>
+        <span class="text-sm">Minhas Solicitações</span>
+      </a>
+      <a href="{{ url_for('solicitacao.nova') }}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint == 'solicitacao.nova' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-plus w-5 text-center text-sm"></i>
+        <span class="text-sm">Nova Solicitação</span>
+      </a>
+      {% endif %}
+
+      {% if papel == 'aprovador' %}
+      <a href="{{ url_for('admin.dashboard') }}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint and 'aprovar' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-check-double w-5 text-center text-sm"></i>
+        <span class="text-sm">Aprovações Pendentes</span>
+      </a>
+      {% endif %}
+
+      {% if papel in ('admin', 'rh', 'superadmin') %}
+      <a href="{{ url_for('admin.dashboard') }}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint and request.endpoint == 'solicitacao.nova' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-pen-to-square w-5 text-center text-sm"></i>
+        <span class="text-sm">Nova Solicitação</span>
+      </a>
+      {% endif %}
+
+      <!-- ===== ADMINISTRAÇÃO ===== -->
+      {% if papel in ('admin', 'superadmin') %}
+      <div class="pt-5 pb-1.5 px-3">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Administração</p>
+      </div>
+
+      <a href="{{ url_for('auth.gerenciar_usuarios') }}"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint and 'usuarios' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-users-gear w-5 text-center text-sm"></i>
+        <span class="text-sm">Usuários</span>
+      </a>
+      {% endif %}
+
+      <!-- Spacer -->
+      <div class="pb-4"></div>
+    </nav>
+
+    <!-- User footer -->
+    <div class="flex-shrink-0 px-3 lg:px-4 py-3 border-t border-slate-800">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+          {{ iniciais }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-white truncate leading-tight">{{ nome }}</p>
+          <span class="inline-block px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded mt-0.5
+            {% if papel == 'superadmin' %}bg-green-600/25 text-green-400
+            {% elif papel == 'admin' %}bg-purple-600/25 text-purple-400
+            {% elif papel == 'rh' %}bg-blue-600/25 text-blue-400
+            {% elif papel == 'aprovador' %}bg-indigo-600/25 text-indigo-400
+            {% else %}bg-amber-600/25 text-amber-400{% endif %}">
+            {{ {'superadmin':'Super Admin', 'admin':'Admin', 'rh':'RH', 'gestor':'Gestor', 'aprovador':'Aprovador'}.get(papel, papel) }}
+          </span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="text-slate-500 hover:text-red-400 transition-colors p-1" title="Sair">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right: Content Area -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+    <!-- Top bar -->
+    <header class="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex-shrink-0 transition-colors">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="md:hidden text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors p-1 -ml-1" aria-label="Abrir menu">
+          <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+        <div class="hidden md:flex items-center gap-2 text-sm text-slate-400">
+          <span class="text-brand-600 dark:text-brand-500 font-medium">{{ ('Recrutamento', 'Solicitações', 'Dashboard', 'Administração') | first }}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 text-sm text-slate-400">
+          <i class="fa-regular fa-bell"></i>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-xs flex-shrink-0" title="{{ nome }}">
+            {{ iniciais }}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="px-4 md:px-6 pt-4 space-y-2">
+      {% for category, message in messages %}
+      <div class="p-3 md:p-4 rounded-xl flex items-center gap-3 shadow-sm border text-sm
+        {% if category == 'success' %}bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800
+        {% elif category == 'error' %}bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800
+        {% elif category == 'warning' %}bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800
+        {% else %}bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800{% endif %}">
+        <i class="fa-solid
+          {% if category == 'success' %}fa-circle-check
+          {% elif category == 'error' %}fa-circle-exclamation
+          {% elif category == 'warning' %}fa-triangle-exclamation
+          {% else %}fa-circle-info{% endif %}"></i>
+        <span>{{ message }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Page Content -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script>
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var backdrop = document.getElementById('sidebar-backdrop');
+  sidebar.classList.toggle('-translate-x-full');
+  backdrop.classList.toggle('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var backdrop = document.getElementById('sidebar-backdrop');
+  if (backdrop) {
+    backdrop.addEventListener('click', function() {
+      toggleSidebar();
+    });
+  }
+});
+</script>
+{% endblock %}

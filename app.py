@@ -1,25 +1,30 @@
-from flask import Flask
+from dotenv import load_dotenv
+load_dotenv()
+
+from flask import Flask, g, session
+from src.config import Config
 from routes.public import public_bp
 from routes.admin import admin_bp
-from models.db import init_db
-from dotenv import load_dotenv
+from routes.auth import auth_bp
+from routes.solicitacao import solicitacao_bp
 
-# Load environment variables
-load_dotenv()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'super-secret-key-change-in-production'
-    
-    # Initialize DB (creates file and tables if not exist)
-    init_db()
-    
-    # Register blueprints
+    app.config.from_object(Config)
+
+    @app.before_request
+    def carregar_usuario():
+        g.usuario = session.get("user")
+
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
-    
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(solicitacao_bp)
+
     return app
+
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(debug=True, port=5000)
+    app.run(debug=Config.DEBUG, port=Config.PORT)
