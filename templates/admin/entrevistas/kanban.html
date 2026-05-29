@@ -1,0 +1,124 @@
+{% extends "admin_base.html" %}
+{% block title %}Entrevistas — {{ g.usuario.nome if g.usuario else 'RH' }} | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{{ url_for('admin.entrevistas_listar') }}"
+     class="text-brand-600 hover:text-brand-700 font-medium flex items-center mb-1">
+    <i class="fa-solid fa-arrow-left mr-2"></i> Voltar para Vagas
+  </a>
+  <h1 class="text-xl font-bold text-slate-900 dark:text-white">{{ g.usuario.nome if g.usuario else 'RH' }}</h1>
+  <p class="text-sm text-slate-500 dark:text-slate-400">{{ vaga.titulo }}</p>
+</div>
+
+{% set colunas = pipeline_data.colunas %}
+{% set etapas = pipeline_data.etapas %}
+
+{% if selecionados %}
+<div class="mb-6">
+  <h2 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+    <i class="fa-solid fa-users text-brand-500"></i> Aguardando Início
+    <span class="text-xs font-normal text-slate-400">({{ selecionados|length }})</span>
+  </h2>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+    {% for s in selecionados %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-brand-200 dark:border-brand-800 border-l-4 border-l-brand-400 shadow-sm p-4 transition-colors">
+      <div class="flex items-start justify-between mb-2">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ s.nome }}</p>
+          <p class="text-[11px] text-slate-400 truncate">{{ s.email }}</p>
+        </div>
+        <span class="shrink-0 ml-2 text-[11px] font-bold text-brand-600 dark:text-brand-400">Score: {{ s.nota or 'N/A' }}</span>
+      </div>
+      <form method="POST" action="{{ url_for('entrevista.iniciar_por_candidato', id=s.id) }}" class="space-y-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="acao" value="iniciar_agendar">
+        <div class="flex gap-2 items-center">
+          <input type="datetime-local" name="agendado_para" required
+                 class="flex-1 text-[11px] px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+          <button type="submit"
+                  class="shrink-0 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-lg transition-colors">
+            <i class="fa-solid fa-calendar-check mr-1"></i> Agendar
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if not etapas %}
+<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 text-center">
+  <i class="fa-solid fa-triangle-exclamation text-3xl text-amber-500 mb-3"></i>
+  <p class="text-amber-800 dark:text-amber-300 font-medium">Nenhuma etapa configurada</p>
+  <p class="text-sm text-amber-600 dark:text-amber-400 mt-1">Adicione etapas de entrevista para usar o Kanban.</p>
+</div>
+{% else %}
+<div class="overflow-x-auto pb-4">
+  <div class="flex gap-4">
+    {% for col_id, col in colunas.items() %}
+    {% set cor = col.cor if col.tipo == 'final' else 'slate' %}
+    <div class="min-w-[260px] max-w-[260px] rounded-2xl border {% if col.tipo == 'final' and col.cor == 'emerald' %}border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/10{% elif col.tipo == 'final' and col.cor == 'red' %}border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10{% elif col.tipo == 'final' and col.cor == 'amber' %}border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10{% elif col.tipo == 'final' and col.cor == 'blue' %}border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10{% else %}border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800{% endif %} flex flex-col">
+      <div class="px-3 py-2.5 border-b border-inherit flex items-center justify-between">
+        <div class="flex items-center gap-2 min-w-0">
+          {% if col.tipo == 'final' %}
+          <i class="fa-solid {{ col.icone }} text-{{ cor }}-500"></i>
+          {% else %}
+          <span class="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 text-xs font-bold flex items-center justify-center">{{ col.etapa.ordem }}</span>
+          {% endif %}
+          <span class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{{ col.titulo if col.tipo == 'final' else col.etapa.titulo }}</span>
+        </div>
+        <span class="shrink-0 ml-2 w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center">{{ col.candidatos|length }}</span>
+      </div>
+      <div class="flex-1 p-2 space-y-2 overflow-y-auto">
+        {% for c in col.candidatos %}
+        {% set ns = namespace(stagestatus='', stage=None) %}
+        {% for p in c.progresso %}
+        {% if p.status in ('pendente', 'agendado', 'realizado') and not ns.stagestatus %}
+        {% set ns.stagestatus = p.status %}
+        {% set ns.stage = p %}
+        {% endif %}
+        {% endfor %}
+        <a href="{{ url_for('entrevista.candidato_progresso', id=c.id) }}"
+           class="block bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-3 hover:shadow-md hover:border-brand-300 dark:hover:border-brand-700 transition-all">
+          <div class="flex items-start justify-between mb-1.5">
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ c.nome }}</p>
+              <p class="text-[11px] text-slate-400 truncate">{{ c.email }}</p>
+            </div>
+            <span class="shrink-0 ml-2 text-[11px] font-bold text-brand-600 dark:text-brand-400">Score: {{ c.nota or 'N/A' }}</span>
+          </div>
+          {% if col.tipo == 'etapa' %}
+          <div class="flex items-center gap-1.5 mt-1.5">
+            {% if ns.stagestatus == 'pendente' %}
+            <span class="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <i class="fa-solid fa-hourglass"></i> Aguardando
+            </span>
+            {% elif ns.stagestatus == 'agendado' %}
+            <span class="text-[10px] text-blue-600 dark:text-blue-400 flex items-center gap-1">
+              <i class="fa-solid fa-calendar-check"></i> Agendado
+            </span>
+            {% elif ns.stagestatus == 'realizado' %}
+            <span class="text-[10px] text-purple-600 dark:text-purple-400 flex items-center gap-1">
+              <i class="fa-solid fa-gavel"></i> Aguardando Decisão
+            </span>
+            {% else %}
+            {% set aprovadas = c.progresso | selectattr('status', 'equalto', 'aprovado') | list %}
+            {% if aprovadas %}
+            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <i class="fa-solid fa-check-circle"></i> {{ aprovadas|length }} etapa{{ 's' if aprovadas|length != 1 }} concluída{{ 's' if aprovadas|length != 1 }}
+            </span>
+            {% endif %}
+            {% endif %}
+          </div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

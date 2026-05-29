@@ -1,0 +1,324 @@
+{% extends "admin_base.html" %}
+{% block title %}Entrevistas: {{ vaga.titulo }} | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div>
+    <a href="{{ url_for('solicitacao.detalhes', id=vaga.id) }}"
+       class="text-brand-600 hover:text-brand-700 font-medium flex items-center mb-2">
+      <i class="fa-solid fa-arrow-left mr-2"></i> Voltar para Solicitação
+    </a>
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Pipeline de Entrevistas</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ vaga.titulo }}</p>
+  </div>
+
+  <div class="flex gap-2 flex-wrap">
+    {% if not etapas %}
+    <form action="{{ url_for('entrevista.configurar', id=vaga.id) }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="acao" value="iniciar_entrevistas">
+      <button type="submit"
+              class="bg-pink-600 hover:bg-pink-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm flex items-center gap-2">
+        <i class="fa-solid fa-play"></i> Iniciar Fase de Entrevistas
+      </button>
+    </form>
+    {% endif %}
+    <button onclick="document.getElementById('addEtapaModal').classList.remove('hidden')"
+            class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium py-2 px-4 rounded-lg transition-colors text-sm flex items-center gap-2">
+      <i class="fa-solid fa-plus"></i> Nova Etapa
+    </button>
+  </div>
+</div>
+
+{% if not etapas and not candidatos %}
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-center transition-colors">
+  <i class="fa-solid fa-people-arrows text-5xl text-slate-300 dark:text-slate-600 mb-4"></i>
+  <h3 class="text-xl font-medium text-slate-900 dark:text-white mb-2">Fase de Entrevistas não iniciada</h3>
+  <p class="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+    Clique em "Iniciar Fase de Entrevistas" para ativar o pipeline.
+  </p>
+</div>
+
+{% elif not etapas %}
+<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 mb-6 transition-colors">
+  <div class="flex items-center gap-2 mb-3">
+    <i class="fa-solid fa-triangle-exclamation text-amber-600 dark:text-amber-400"></i>
+    <p class="text-sm font-medium text-amber-800 dark:text-amber-300">Nenhuma etapa de entrevista configurada. Adicione etapas como "Entrevista RH", "Entrevista Gestor", etc.</p>
+  </div>
+</div>
+{% endif %}
+
+{% if candidatos %}
+<!-- Matrix: Candidates x Stages -->
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors mb-6">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+          <th class="text-left px-4 py-3 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[180px]">Candidato</th>
+          {% for etapa in etapas %}
+          <th class="text-center px-3 py-3 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap min-w-[140px]">
+            {{ etapa.titulo }}
+            <div class="text-[10px] font-normal text-slate-400 mt-0.5">({{ etapa.ordem }}º)</div>
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+        {% for c in candidatos %}
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+          <td class="px-4 py-3">
+            <div class="font-medium text-slate-900 dark:text-white">{{ c.nome }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">{{ c.email }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Score: {{ c.nota or 'N/A' }}</div>
+          </td>
+          {% for etapa in etapas %}
+          <td class="px-3 py-3 text-center align-middle">
+            {% set found = [] %}
+            {% for p in c.progresso %}
+            {% if p.etapa_id == etapa.id %}
+            {% set _ = found.append(p) %}
+            {% endif %}
+            {% endfor %}
+
+            {% if found %}
+            {% set e = found[0] %}
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md
+                {% if e.status == 'aprovado' %}bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800
+                {% elif e.status == 'reprovado' %}bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800
+                {% elif e.status == 'agendado' %}bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800
+                {% elif e.status == 'realizado' %}bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800
+                {% else %}bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600{% endif %}">
+                {% if e.status == 'aprovado' %}<i class="fa-solid fa-check"></i>
+                {% elif e.status == 'reprovado' %}<i class="fa-solid fa-xmark"></i>
+                {% elif e.status == 'agendado' %}<i class="fa-solid fa-calendar"></i>
+                {% elif e.status == 'realizado' %}<i class="fa-solid fa-clock"></i>
+                {% else %}<i class="fa-solid fa-hourglass"></i>{% endif %}
+                {{ {'pendente':'Pendente','agendado':'Agendado','realizado':'Realizado','aprovado':'Aprovado','reprovado':'Reprovado'}.get(e.status, e.status) }}
+              </span>
+
+              {% if e.status == 'pendente' %}
+              <div class="flex gap-1">
+                <button onclick="abrirAgendar('{{ e.id }}', '{{ c.nome }}', '{{ etapa.titulo }}')"
+                        class="text-[10px] px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
+                  Agendar
+                </button>
+                <button onclick="abrirAvaliacao('{{ e.id }}', '{{ c.nome }}', '{{ etapa.titulo }}')"
+                        class="text-[10px] px-2 py-0.5 bg-brand-600 hover:bg-brand-700 text-white rounded transition-colors">
+                  Avaliar
+                </button>
+              </div>
+              {% elif e.status == 'agendado' %}
+              <button onclick="abrirAvaliacao('{{ e.id }}', '{{ c.nome }}', '{{ etapa.titulo }}')"
+                      class="text-[10px] px-2 py-0.5 bg-brand-600 hover:bg-brand-700 text-white rounded transition-colors">
+                Realizar
+              </button>
+              {% elif e.status == 'realizado' %}
+              <button onclick="abrirAvaliacao('{{ e.id }}', '{{ c.nome }}', '{{ etapa.titulo }}')"
+                      class="text-[10px] px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors">
+                Aprovar/Reprovar
+              </button>
+              {% endif %}
+
+              {% if e.feedback %}
+              <span class="text-[10px] text-slate-400 italic max-w-[120px] truncate" title="{{ e.feedback }}">"{{ e.feedback[:30] }}{% if e.feedback|length > 30 %}...{% endif %}"</span>
+              {% endif %}
+            </div>
+            {% else %}
+            <span class="text-xs text-slate-300 dark:text-slate-600 italic">—</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Candidates not yet in interviews -->
+{% if candidatos_avaliados %}
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 transition-colors">
+  <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+    <i class="fa-solid fa-users text-brand-500"></i> Candidatos Aguardando Entrevista
+  </h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+    {% for c in candidatos_avaliados %}
+    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex items-center justify-between">
+      <div>
+        <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ c.nome }}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Score: {{ c.nota or 'N/A' }}</p>
+      </div>
+      <form action="{{ url_for('entrevista.iniciar_por_candidato', id=c.id) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+                class="text-xs px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors">
+          Iniciar
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Candidatos Selecionados -->
+{% if candidatos_selecionados %}
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-sky-200 dark:border-sky-800 p-5 mb-6 transition-colors">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+      <i class="fa-solid fa-check-double text-sky-500"></i> Candidatos Selecionados
+      <span class="text-xs font-normal text-slate-500 dark:text-slate-400">(Aguardando início das entrevistas)</span>
+    </h3>
+    {% if not etapas %}
+    <form action="{{ url_for('entrevista.configurar', id=vaga.id) }}" method="POST" class="inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="acao" value="copiar_da_ficha">
+      <button type="submit"
+              class="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex items-center gap-1">
+        <i class="fa-solid fa-copy"></i> Copiar Pipeline da Ficha Técnica
+      </button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+    {% for c in candidatos_selecionados %}
+    <div class="border border-sky-200 dark:border-sky-800 rounded-xl p-4 flex items-center justify-between bg-sky-50/50 dark:bg-sky-900/10">
+      <div>
+        <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ c.nome }}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">{{ c.email }}</p>
+        <p class="text-xs text-slate-400">Score: {{ c.nota or 'N/A' }}</p>
+      </div>
+      <form action="{{ url_for('entrevista.iniciar_por_candidato', id=c.id) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+                class="text-xs px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors flex items-center gap-1"
+                {% if not etapas %}onclick="alert('Adicione etapas de entrevista antes de iniciar.'); return false;"{% endif %}>
+          <i class="fa-solid fa-play"></i> Iniciar Entrevistas
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Add Etapa Modal -->
+<div id="addEtapaModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md transition-colors" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white">Nova Etapa de Entrevista</h3>
+      <button onclick="document.getElementById('addEtapaModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    <form action="{{ url_for('entrevista.configurar', id=vaga.id) }}" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="acao" value="adicionar_etapa">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Título *</label>
+        <input type="text" name="titulo" required placeholder="Ex: Entrevista Técnica"
+               class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrição</label>
+        <input type="text" name="descricao" placeholder="Opcional"
+               class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Responsável (papel)</label>
+        <select name="responsavel_papel"
+                class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+          <option value="">Qualquer</option>
+          <option value="rh">RH</option>
+          <option value="gestor">Gestor</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="document.getElementById('addEtapaModal').classList.add('hidden')"
+                class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+          Cancelar
+        </button>
+        <button type="submit"
+                class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm transition-colors">
+          <i class="fa-solid fa-plus mr-1"></i> Adicionar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Avaliar Modal -->
+<div id="avaliarModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md transition-colors" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white">Avaliar Etapa</h3>
+      <button onclick="document.getElementById('avaliarModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" id="avaliarInfo"></p>
+    <form id="avaliarForm" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Feedback</label>
+        <textarea name="feedback" rows="3" placeholder="Observações sobre a entrevista..."
+                  class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" name="status" value="aprovado"
+                class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+          <i class="fa-solid fa-check mr-1"></i> Aprovar
+        </button>
+        <button type="submit" name="status" value="reprovado"
+                class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+                onclick="return confirm('Reprovar candidato nesta etapa?');">
+          <i class="fa-solid fa-xmark mr-1"></i> Reprovar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Agendar Modal -->
+<div id="agendarModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md transition-colors" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white">Agendar Entrevista</h3>
+      <button onclick="document.getElementById('agendarModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" id="agendarInfo"></p>
+    <form id="agendarForm" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data e Hora</label>
+        <input type="datetime-local" name="agendado_para" required
+               class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+      </div>
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+        <i class="fa-solid fa-calendar-check mr-1"></i> Confirmar Agendamento
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+function abrirAvaliacao(entrevistaId, candidatoNome, etapaTitulo) {
+  document.getElementById('avaliarInfo').textContent = candidatoNome + ' — ' + etapaTitulo;
+  document.getElementById('avaliarForm').action = "{{ url_for('entrevista.avancar_etapa_route', id=0) }}".replace('0', entrevistaId);
+  document.getElementById('avaliarModal').classList.remove('hidden');
+}
+
+function abrirAgendar(entrevistaId, candidatoNome, etapaTitulo) {
+  document.getElementById('agendarInfo').textContent = candidatoNome + ' — ' + etapaTitulo;
+  document.getElementById('agendarForm').action = "{{ url_for('entrevista.agendar_entrevista_route', id=0) }}".replace('0', entrevistaId);
+  document.getElementById('agendarModal').classList.remove('hidden');
+}
+</script>
+{% endblock %}

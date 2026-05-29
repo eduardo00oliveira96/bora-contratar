@@ -14,11 +14,21 @@
     class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
     <div
         class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 transition-colors">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-white transition-colors">Candidatos para Vaga: <span
-                class="text-brand-600 dark:text-brand-500 transition-colors">{{ vaga.titulo
-                }}</span></h1>
-        <p class="text-slate-500 dark:text-slate-400 mt-1 transition-colors">Total de {{ candidatos|length }} inscrições
-            recebidas.</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white transition-colors">Candidatos para Vaga: <span
+                        class="text-brand-600 dark:text-brand-500 transition-colors">{{ vaga.titulo
+                        }}</span></h1>
+                <p class="text-slate-500 dark:text-slate-400 mt-1 transition-colors">Total de {{ candidatos|length }} inscrições
+                    recebidas.</p>
+            </div>
+            {% if candidatos %}
+            <a href="{{ url_for('admin.vaga_comparar', id=vaga.id) }}"
+               class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 text-sm flex-shrink-0">
+                <i class="fa-solid fa-arrows-left-right"></i> Comparar Candidatos
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     {% if not candidatos %}
@@ -43,6 +53,15 @@
                 {% elif cand.status == 'Reprovado' %}
                 <span
                     class="px-2.5 py-1 text-xs font-bold rounded-md bg-red-200 dark:bg-red-900/60 text-red-800 dark:text-red-300 transition-colors">Reprovado</span>
+                {% elif cand.status == 'Em_Entrevistas' %}
+                <span
+                    class="px-2.5 py-1 text-xs font-bold rounded-md bg-pink-200 dark:bg-pink-900/60 text-pink-800 dark:text-pink-300 transition-colors">Em Entrevistas</span>
+                {% elif cand.status == 'Aprovado_Entrevistas' %}
+                <span
+                    class="px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 transition-colors">Aprovado Entrev.</span>
+                {% elif cand.status == 'Contratado' %}
+                <span
+                    class="px-2.5 py-1 text-xs font-bold rounded-md bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300 transition-colors">Contratado</span>
                 {% else %}
                 <span
                     class="px-2.5 py-1 text-xs font-bold rounded-md bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 transition-colors">{{

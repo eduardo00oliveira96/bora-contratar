@@ -1,0 +1,317 @@
+{% extends "admin_base.html" %}
+{% block title %}Banco de Talentos | Bora Contratar{% endblock %}
+
+{% block content %}
+<!-- Jinja calculation for KPI metrics -->
+{% set scores = [] %}
+{% for t in talentos %}
+  {% if t.nota %}
+    {% set _ = scores.append(t.nota | float) %}
+  {% endif %}
+{% endfor %}
+{% set avg_score = (scores | sum / scores | length) | round(1) if scores | length > 0 else 0 %}
+
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Banco de Talentos</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Mapeamento e gestão estratégica de candidatos qualificados</p>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+  <!-- Card 1: Total Talentos -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 transition-all hover:shadow-md">
+    <div class="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400">
+      <i class="fa-solid fa-users text-xl"></i>
+    </div>
+    <div>
+      <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total de Talentos</span>
+      <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-0.5">{{ talentos|length }}</h3>
+    </div>
+  </div>
+
+  <!-- Card 2: Score Médio -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 transition-all hover:shadow-md">
+    <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 dark:text-amber-400">
+      <i class="fa-solid fa-star text-xl"></i>
+    </div>
+    <div>
+      <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Score Médio por IA</span>
+      <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-0.5">{{ avg_score }}<span class="text-xs text-slate-400 font-normal"> / 100</span></h3>
+    </div>
+  </div>
+
+  <!-- Card 3: Competências -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 transition-all hover:shadow-md">
+    <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+      <i class="fa-solid fa-tags text-xl"></i>
+    </div>
+    <div>
+      <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tags Mapeadas</span>
+      <h3 class="text-2xl font-bold text-slate-900 dark:text-white mt-0.5">{{ tags_unicas|length }}</h3>
+    </div>
+  </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="mb-6 flex flex-col lg:flex-row gap-4">
+  <!-- Search -->
+  <div class="relative flex-1">
+    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+    <input type="text" id="searchInput" placeholder="Buscar talento por nome, e-mail ou palavra-chave..."
+      class="w-full pl-9 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+  </div>
+  
+  <!-- Score Filter -->
+  <select id="scoreFilter"
+    class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+    <option value="">Todos os scores</option>
+    <option value="excelente">Excelente (Notas >= 80)</option>
+    <option value="bom">Muito Bom (Notas 70 a 79)</option>
+    <option value="regular">Regular (Notas 50 a 69)</option>
+    <option value="baixo">Baixo (Notas < 50)</option>
+  </select>
+
+  <!-- Tag Filter -->
+  <select id="tagFilter"
+    class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+    <option value="">Todas as competências</option>
+    {% for tag in tags_unicas %}
+      <option value="{{ tag }}">{{ tag }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<!-- Talents Table -->
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+      <thead class="bg-slate-50 dark:bg-slate-800/50">
+        <tr>
+          <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Candidato</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Score IA</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tags / Competências</th>
+          <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Origem</th>
+          <th class="px-5 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-700" id="talentsTableBody">
+        {% for t in talentos %}
+        {% set tags_data = t.tags_lista | join(',') | lower %}
+        <tr class="talent-row hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+            data-search="{{ (t.nome ~ ' ' ~ t.email_candidato ~ ' ' ~ t.titulo_vaga)|lower }}"
+            data-score="{{ t.nota or 0 }}"
+            data-tags="{{ tags_data }}">
+          
+          <!-- Candidate profile details -->
+          <td class="px-5 py-4 whitespace-nowrap">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                {{ t.nome[:1] if t.nome else '?' }}
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ t.nome or '—' }}</p>
+                <div class="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  <span>{{ t.email_candidato or '' }}</span>
+                  {% if t.telefone %}
+                  <span class="text-slate-300 dark:text-slate-600">•</span>
+                  <span>{{ t.telefone }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </td>
+
+          <!-- AI Score with Visual Gauge -->
+          <td class="px-5 py-4 whitespace-nowrap">
+            {% if t.nota %}
+            <div class="flex items-center gap-2">
+              <div class="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full rounded-full {% if t.nota >= 80 %}bg-emerald-500{% elif t.nota >= 70 %}bg-brand-500{% elif t.nota >= 50 %}bg-amber-500{% else %}bg-red-500{% endif %}" style="width: {{ t.nota }}%"></div>
+              </div>
+              <span class="text-sm font-bold {% if t.nota >= 80 %}text-emerald-600 dark:text-emerald-400{% elif t.nota >= 70 %}text-brand-600 dark:text-brand-400{% elif t.nota >= 50 %}text-amber-600 dark:text-amber-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                {{ t.nota }}
+              </span>
+            </div>
+            {% else %}
+            <span class="text-xs text-slate-400">—</span>
+            {% endif %}
+          </td>
+
+          <!-- Tags Cloud -->
+          <td class="px-5 py-4">
+            <div class="flex flex-wrap gap-1 max-w-xs md:max-w-md">
+              {% for tag in t.tags_lista %}
+              <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600/40">
+                {{ tag }}
+              </span>
+              {% else %}
+              <span class="text-xs text-slate-400">—</span>
+              {% endfor %}
+            </div>
+          </td>
+
+          <!-- Origin Job -->
+          <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-50 dark:bg-slate-800 text-xs font-medium border border-slate-200 dark:border-slate-700">
+              <i class="fa-solid fa-briefcase text-[10px]"></i> {{ t.titulo_vaga or '—' }}
+            </span>
+          </td>
+
+          <!-- Actions -->
+          <td class="px-5 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <div class="flex items-center justify-end gap-2.5">
+              <button onclick="openVincularModal('{{ t.id }}', '{{ t.nome }}')" 
+                      class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-brand-50 hover:bg-brand-100 text-brand-600 dark:bg-brand-900/30 dark:hover:bg-brand-900/50 dark:text-brand-400 transition-colors">
+                <i class="fa-solid fa-shuffle"></i> Vincular Vaga
+              </button>
+              <a href="{{ url_for('admin.candidato_detalhes', id=t.id) }}"
+                 class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 transition-colors">
+                Ver Perfil <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="px-5 py-16 text-center text-slate-500 dark:text-slate-400">
+            <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3">
+              <i class="fa-solid fa-database text-2xl text-slate-300 dark:text-slate-600"></i>
+            </div>
+            <p class="text-base font-semibold">Nenhum talento no banco atualmente</p>
+            <p class="text-sm mt-1 text-slate-400">Candidatos aparecerão aqui quando você alterar o status de suas candidaturas para "Banco de Talentos".</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Link to Job -->
+<div id="vincularModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <!-- Backdrop -->
+  <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+    <div class="fixed inset-0 transition-opacity bg-black/60 dark:bg-black/80" onclick="closeVincularModal()"></div>
+
+    <!-- Center element -->
+    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+    <!-- Modal Box -->
+    <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-slate-800 rounded-xl shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-200 dark:border-slate-700">
+      <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2" id="modal-title">
+          <i class="fa-solid fa-shuffle text-brand-500"></i> Vincular a Nova Vaga
+        </h3>
+        <button type="button" onclick="closeVincularModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form action="{{ url_for('admin.banco_talentos_vincular') }}" method="POST">
+        <!-- CSRF Token (WTF-Flask Protection) -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" id="modalCandidaturaId" name="candidatura_id">
+
+        <div class="px-6 py-6 space-y-4">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Candidato Selecionado</span>
+            <p id="modalCandidatoNome" class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">—</p>
+          </div>
+
+          <div>
+            <label for="modalVagaId" class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Vaga Destino</label>
+            <select id="modalVagaId" name="vaga_id" required
+              class="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+              <option value="" disabled selected>Selecione uma vaga ativa...</option>
+              {% for vaga in vagas %}
+                <option value="{{ vaga.id }}">{{ vaga.titulo }}</option>
+              {% else %}
+                <option value="" disabled>Nenhuma vaga ativa disponível</option>
+              {% endfor %}
+            </select>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 leading-relaxed">
+              <i class="fa-solid fa-info-circle"></i> O candidato herdará as tags, notas e análises completas por IA criadas previamente para triagem imediata no novo pipeline.
+            </p>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+          <button type="button" onclick="closeVincularModal()"
+            class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
+            Confirmar Vinculação
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var searchInput = document.getElementById('searchInput');
+  var scoreFilter = document.getElementById('scoreFilter');
+  var tagFilter = document.getElementById('tagFilter');
+  var rows = document.querySelectorAll('.talent-row');
+
+  function filterTalents() {
+    var search = (searchInput.value || '').toLowerCase();
+    var scoreRange = scoreFilter.value;
+    var selectedTag = (tagFilter.value || '').toLowerCase().trim();
+
+    rows.forEach(function(row) {
+      var dataSearch = row.getAttribute('data-search') || '';
+      var scoreVal = parseInt(row.getAttribute('data-score') || 0, 10);
+      var tagsData = row.getAttribute('data-tags') || '';
+
+      var matchSearch = !search || dataSearch.includes(search);
+      
+      var matchScore = true;
+      if (scoreRange === 'excelente') {
+        matchScore = scoreVal >= 80;
+      } else if (scoreRange === 'bom') {
+        matchScore = scoreVal >= 70 && scoreVal < 80;
+      } else if (scoreRange === 'regular') {
+        matchScore = scoreVal >= 50 && scoreVal < 70;
+      } else if (scoreRange === 'baixo') {
+        matchScore = scoreVal < 50;
+      }
+
+      var matchTag = true;
+      if (selectedTag) {
+        // Verifica se a tag está presente na lista separada por vírgulas
+        var tagsArray = tagsData.split(',').map(function(t) { return t.trim(); });
+        matchTag = tagsArray.includes(selectedTag);
+      }
+
+      row.style.display = (matchSearch && matchScore && matchTag) ? '' : 'none';
+    });
+  }
+
+  searchInput.addEventListener('input', filterTalents);
+  scoreFilter.addEventListener('change', filterTalents);
+  tagFilter.addEventListener('change', filterTalents);
+});
+
+// Modal Logic
+function openVincularModal(candidaturaId, nome) {
+  document.getElementById('modalCandidaturaId').value = candidaturaId;
+  document.getElementById('modalCandidatoNome').textContent = nome;
+  
+  var modal = document.getElementById('vincularModal');
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVincularModal() {
+  var modal = document.getElementById('vincularModal');
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+</script>
+{% endblock %}

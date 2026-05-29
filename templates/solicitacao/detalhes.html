@@ -25,6 +25,8 @@
                     {% elif vaga.status_vaga == 'aprovada_ressalvas' %}bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300
                     {% elif vaga.status_vaga == 'em_recrutamento' %}bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300
                     {% elif vaga.status_vaga == 'publicada' %}bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300
+                    {% elif vaga.status_vaga == 'em_entrevistas' %}bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-300
+                    {% elif vaga.status_vaga == 'concluida' %}bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300
                     {% else %}bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300{% endif %}">
                     {{ vaga.status_vaga | replace('_', ' ') | title }}
                 </span>
@@ -42,10 +44,6 @@
                 <div>
                     <p class="text-slate-500 dark:text-slate-400 font-medium">Contrato</p>
                     <p class="text-slate-900 dark:text-white font-semibold">{{ vaga.tipo_contrato }}</p>
-                </div>
-                <div>
-                    <p class="text-slate-500 dark:text-slate-400 font-medium">Centro de Custo</p>
-                    <p class="text-slate-900 dark:text-white font-semibold">{{ vaga.centro_custo or '-' }}</p>
                 </div>
                 <div>
                     <p class="text-slate-500 dark:text-slate-400 font-medium">Previsão Início</p>
@@ -136,7 +134,7 @@
                 </div>
                 {% endfor %}
 
-                {% if vaga.status_vaga in ('aprovada','aprovada_ressalvas','em_recrutamento','publicada') %}
+                {% if vaga.status_vaga in ('aprovada','aprovada_ressalvas','em_recrutamento','publicada','em_entrevistas','concluida') %}
                 <div class="flex gap-3">
                     <div class="flex items-center">
                         <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
@@ -147,6 +145,8 @@
                             {% if vaga.status_vaga == 'aprovada_ressalvas' %}Aprovada com Ressalvas{% endif %}
                             {% if vaga.status_vaga == 'em_recrutamento' %}Em Recrutamento{% endif %}
                             {% if vaga.status_vaga == 'publicada' %}Publicada{% endif %}
+                            {% if vaga.status_vaga == 'em_entrevistas' %}Em Entrevistas{% endif %}
+                            {% if vaga.status_vaga == 'concluida' %}Concluída{% endif %}
                         </p>
                     </div>
                 </div>
@@ -158,7 +158,13 @@
                         <div class="w-3 h-3 rounded-full bg-red-500"></div>
                     </div>
                     <div>
-                        <p class="text-sm font-semibold text-red-600 dark:text-red-400">Processo Encerrado</p>
+                        <p class="text-sm font-semibold text-red-600 dark:text-red-400">Recusada</p>
+                        {% if vaga.observacoes_rh %}
+                        <div class="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                            <p class="text-xs font-medium text-red-700 dark:text-red-300">Motivo da recusa:</p>
+                            <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ vaga.observacoes_rh }}</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
@@ -167,6 +173,21 @@
     </div>
 
     <div class="space-y-4">
+        {% if g.usuario.get("id") == vaga.criado_por and vaga.status_vaga == 'ajustes_pendentes' %}
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-amber-200 dark:border-amber-800 p-6 transition-colors">
+            <h3 class="text-lg font-bold text-amber-800 dark:text-amber-300 mb-3">
+                <i class="fa-solid fa-pen-to-square mr-1"></i> Ajustes Necessários
+            </h3>
+            {% if vaga.observacoes_rh %}
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">{{ vaga.observacoes_rh }}</p>
+            {% endif %}
+            <a href="{{ url_for('solicitacao.ajustar', id=vaga.id) }}"
+                class="block w-full text-center bg-amber-600 hover:bg-amber-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
+                <i class="fa-solid fa-pen-to-square mr-2"></i> Fazer Ajustes
+            </a>
+        </div>
+        {% endif %}
+
         {% if g.usuario.papel in ('admin', 'rh', 'superadmin') and vaga.status_vaga in ('solicitada', 'em_triagem') %}
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition-colors">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-3">Triagem RH</h3>
@@ -181,6 +202,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-amber-200 dark:border-amber-800 p-6 transition-colors">
             <h3 class="text-lg font-bold text-amber-800 dark:text-amber-300 mb-3">Sua Aprovação</h3>
             <form action="{{ url_for('solicitacao.aprovar', id=vaga.id) }}" method="POST" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <textarea name="observacoes" rows="2" placeholder="Observações (opcional)"
                     class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
                 <button type="submit" name="parecer" value="aprovado"
@@ -200,10 +222,21 @@
         </div>
         {% endif %}
 
+        {% if g.usuario.papel in ('admin', 'rh', 'superadmin') and vaga.status_vaga == 'publicada' %}
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition-colors">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-3">Entrevistas</h3>
+            <a href="{{ url_for('entrevista.pipeline', id=vaga.id) }}"
+               class="block w-full text-center bg-pink-600 hover:bg-pink-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
+                <i class="fa-solid fa-people-arrows mr-2"></i> Gerenciar Entrevistas
+            </a>
+        </div>
+        {% endif %}
+
         {% if g.usuario.papel in ('admin', 'rh', 'superadmin') and vaga.status_vaga in ('aprovada', 'aprovada_ressalvas') %}
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition-colors">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-3">Recrutamento</h3>
             <form action="{{ url_for('solicitacao.iniciar_recrutamento', id=vaga.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit"
                     class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
                     <i class="fa-solid fa-play"></i> Iniciar Recrutamento
@@ -216,6 +249,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition-colors">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-3">Publicar Vaga</h3>
             <form action="{{ url_for('solicitacao.publicar', id=vaga.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit"
                     class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
                     <i class="fa-solid fa-globe"></i> Publicar Vaga

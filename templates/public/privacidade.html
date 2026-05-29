@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Política de Privacidade | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 transition-colors">
+    
+    <div class="mb-6">
+      <a href="{{ url_for('public.index') }}" class="text-brand-600 hover:text-brand-700 font-medium flex items-center">
+        <i class="fa-solid fa-arrow-left mr-2"></i> Voltar
+      </a>
+    </div>
+
+    <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">Política de Privacidade</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-8">Última atualização: Maio de 2026</p>
+
+    <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-6">
+      O Bora Contratar está comprometido em proteger sua privacidade e seus dados pessoais enquanto candidato.
+      Através desta Política de Privacidade, descrevemos as melhores práticas de privacidade e segurança implementadas
+      na coleta, utilização e demais etapas do tratamento de informações pessoais na plataforma Bora Contratar.
+    </p>
+
+    <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-8">
+      Você aceita esta Política e concorda com a coleta, armazenamento e uso das informações pessoais quando
+      decide se candidatar a uma vaga disponível em nossa plataforma.
+    </p>
+
+    <hr class="border-slate-200 dark:border-slate-700 mb-8">
+
+    <section class="mb-8">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">1. Que dados são coletados e como?</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
+        Quando você se candidata a uma vaga através do Bora Contratar, coletamos os seguintes dados:
+      </p>
+      <ul class="list-disc pl-6 space-y-2 text-slate-700 dark:text-slate-300">
+        <li><strong>Informações de contato:</strong> nome completo, CPF, telefone e e-mail;</li>
+        <li><strong>Currículo:</strong> arquivo PDF contendo suas informações profissionais, experiência, formação acadêmica e habilidades;</li>
+        <li><strong>Dados de navegação:</strong> endereço IP, tipo de navegador e páginas acessadas em nosso site.</li>
+      </ul>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">2. Como os dados são utilizados?</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
+        Seus dados pessoais são utilizados exclusivamente para as seguintes finalidades:
+      </p>
+      <ul class="list-disc pl-6 space-y-2 text-slate-700 dark:text-slate-300">
+        <li>Processar sua candidatura à vaga desejada;</li>
+        <li>Avaliar seu perfil por meio de análise automatizada por inteligência artificial (IA), gerando uma pontuação de compatibilidade com a vaga;</li>
+        <li>Permitir que a empresa contratante analise seu currículo e perfil;</li>
+        <li>Manter registro do processo seletivo para fins de conformidade e auditoria;</li>
+        <li>Melhorar nossos serviços e a experiência do candidato.</li>
+      </ul>
+      <div class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+        <p class="text-sm text-amber-800 dark:text-amber-300 font-medium">
+          <i class="fa-solid fa-robot mr-2"></i>
+          <strong>Avaliação por IA:</strong> Seu currículo é submetido a uma análise automatizada por inteligência artificial
+          que gera uma nota, análise detalhada e recomendação com base nos requisitos da vaga.
+          Esta é uma decisão automatizada conforme previsto na LGPD (Lei nº 13.709/2018).
+        </p>
+      </div>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">3. Quem tem acesso aos dados?</h2>
+      <ul class="list-disc pl-6 space-y-2 text-slate-700 dark:text-slate-300">
+        <li><strong>Empresa contratante:</strong> os dados são compartilhados com a empresa responsável pela vaga para fins de recrutamento e seleção;</li>
+        <li><strong>Fornecedores de serviços:</strong> provedores de infraestrutura de nuvem (Supabase), serviços de IA e envio de e-mails, que atuam sob contrato e apenas para as finalidades descritas;</li>
+        <li><strong>Obrigação legal:</strong> quando exigido por lei, decisão judicial ou requisição de autoridade competente.</li>
+      </ul>
+      <p class="mt-3 text-slate-700 dark:text-slate-300">
+        Seus dados pessoais <strong>não são vendidos ou alugados</strong> para terceiros para fins de marketing.
+      </p>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">4. Por quanto tempo mantemos seus dados?</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+        Mantemos seus dados pessoais durante todo o período do processo seletivo e, após sua conclusão,
+        pelo prazo de <strong>6 meses</strong> para fins de auditoria e conformidade, salvo se você solicitar a
+        exclusão antecipada. Após este período, os dados são anonimizados ou excluídos de nossos servidores.
+      </p>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">5. Como protegemos seus dados?</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+        Adotamos medidas técnicas e administrativas para proteger seus dados pessoais contra acessos não autorizados,
+        situações acidentais ou ilícitas de destruição, perda, alteração, comunicação ou difusão, incluindo:
+      </p>
+      <ul class="list-disc pl-6 space-y-2 text-slate-700 dark:text-slate-300 mt-2">
+        <li>Criptografia em trânsito (TLS/SSL);</li>
+        <li>Controle de acesso baseado em papéis (RBAC);</li>
+        <li>Monitoramento de segurança e logging de acessos;</li>
+        <li>Armazenamento em infraestrutura com certificação de segurança (Supabase/AWS).</li>
+      </ul>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">6. Seus direitos como titular (LGPD)</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
+        Nos termos da Lei Geral de Proteção de Dados (Lei nº 13.709/2018), você possui os seguintes direitos:
+      </p>
+      <ul class="list-disc pl-6 space-y-2 text-slate-700 dark:text-slate-300">
+        <li><strong>Confirmação e acesso:</strong> saber se tratamos seus dados e acessá-los;</li>
+        <li><strong>Correção:</strong> solicitar a correção de dados incompletos, inexatos ou desatualizados;</li>
+        <li><strong>Anonimização, bloqueio ou eliminação:</strong> solicitar a anonimização, bloqueio ou eliminação de dados desnecessários ou tratados em desconformidade com a lei;</li>
+        <li><strong>Portabilidade:</strong> solicitar a portabilidade dos dados a outro fornecedor de serviço;</li>
+        <li><strong>Eliminação:</strong> solicitar a eliminação dos dados tratados com seu consentimento;</li>
+        <li><strong>Revisão de decisões automatizadas:</strong> solicitar revisão de decisões tomadas exclusivamente com base em tratamento automatizado de dados (avaliação por IA).</li>
+      </ul>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">7. Cookies</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+        Utilizamos cookies essenciais para o funcionamento da plataforma. Estes cookies não coletam
+        informações pessoais além daquelas necessárias para a operação do sistema. Você pode configurar
+        seu navegador para rejeitar cookies, mas isso pode afetar a funcionalidade da plataforma.
+      </p>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">8. Responsável pela Proteção de Dados (DPO)</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+        Caso tenha dúvidas sobre esta Política de Privacidade ou queira exercer seus direitos,
+        entre em contato com nosso Encarregado de Proteção de Dados:
+      </p>
+      <div class="mt-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+        <p class="text-slate-700 dark:text-slate-300"><strong>E-mail:</strong> dpo@boracontratar.com.br</p>
+      </div>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">9. Mudanças nesta política</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+        Esta Política de Privacidade poderá ser alterada a qualquer momento. Notificaremos sobre mudanças
+        significativas através do nosso site. O uso contínuo da plataforma após as alterações implica
+        na aceitação da nova política.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">10. Contato</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+        Em caso de dúvidas sobre esta Política de Privacidade ou sobre o tratamento de seus dados pessoais,
+        entre em contato conosco:
+      </p>
+      <div class="mt-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+        <p class="text-slate-700 dark:text-slate-300"><strong>E-mail:</strong> contato@boracontratar.com.br</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

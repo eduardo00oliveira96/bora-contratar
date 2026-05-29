@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Página não encontrada | Bora Contratar{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4">
+  <div class="text-center">
+    <p class="text-6xl font-bold text-brand-600 mb-4">404</p>
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Página não encontrada</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">A página que você procura não existe ou foi movida.</p>
+    <a href="{{ url_for('public.index') }}"
+       class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 px-5 rounded-lg transition-colors text-sm">
+      <i class="fa-solid fa-arrow-left"></i> Voltar ao início
+    </a>
+  </div>
+</div>
+{% endblock %}

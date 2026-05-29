@@ -62,6 +62,73 @@
 </div>
 {% endif %}
 
+{% if solicitacoes_ajustes %}
+<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 mb-6 transition-colors">
+  <div class="flex items-center gap-2 mb-3">
+    <i class="fa-solid fa-pen-to-square text-amber-600 dark:text-amber-400"></i>
+    <h2 class="text-sm font-bold text-amber-800 dark:text-amber-300">Precisa de Ajustes ({{ solicitacoes_ajustes|length }})</h2>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+    {% for v in solicitacoes_ajustes %}
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-amber-100 dark:border-amber-900/30 flex items-center justify-between gap-2">
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ v.titulo }}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ v.observacoes_rh or 'Ajustes solicitados pelo RH' }}</p>
+      </div>
+      <a href="{{ url_for('solicitacao.ajustar', id=v.id) }}"
+         class="text-xs px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors flex-shrink-0">
+        Ajustar
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if solicitacoes_aprovacao %}
+<div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl p-5 mb-6 transition-colors">
+  <div class="flex items-center gap-2 mb-3">
+    <i class="fa-solid fa-check-double text-purple-600 dark:text-purple-400"></i>
+    <h2 class="text-sm font-bold text-purple-800 dark:text-purple-300">Em Aprovação ({{ solicitacoes_aprovacao|length }})</h2>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+    {% for v in solicitacoes_aprovacao %}
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-purple-100 dark:border-purple-900/30 flex items-center justify-between gap-2">
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ v.titulo }}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ v.user_created }}</p>
+      </div>
+      <a href="{{ url_for('solicitacao.detalhes', id=v.id) }}"
+         class="text-xs px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex-shrink-0">
+        Detalhes
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% set vagas_entrevistas = vagas | selectattr('status_vaga', 'equalto', 'em_entrevistas') | list %}
+{% if vagas_entrevistas %}
+<div class="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-2xl p-5 mb-6 transition-colors">
+  <div class="flex items-center gap-2 mb-3">
+    <i class="fa-solid fa-people-arrows text-pink-600 dark:text-pink-400"></i>
+    <h2 class="text-sm font-bold text-pink-800 dark:text-pink-300">Entrevistas em Andamento</h2>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+    {% for v in vagas if v.status_vaga == 'em_entrevistas' %}
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-3 border border-pink-100 dark:border-pink-900/30 flex items-center justify-between gap-2">
+      <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ v.titulo }}</p>
+      <a href="{{ url_for('entrevista.pipeline', id=v.id) }}"
+         class="text-xs px-2.5 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors flex-shrink-0">
+        Ver Pipeline
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 {% if solicitacoes_triagem %}
 <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-5 mb-6 transition-colors">
   <div class="flex items-center gap-2 mb-3">
@@ -231,6 +298,8 @@
           {% elif v.status_vaga == 'em_triagem' %}bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300
           {% elif v.status_vaga == 'aguardando_aprovacao' %}bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300
           {% elif v.status_vaga == 'em_recrutamento' %}bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300
+          {% elif v.status_vaga == 'em_entrevistas' %}bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300
+          {% elif v.status_vaga == 'concluida' %}bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300
           {% else %}bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400{% endif %}">
           {{ v.status_vaga | replace('_', ' ') | title }}
         </span>
@@ -294,6 +363,8 @@
               {% elif vaga.status_vaga == 'aguardando_aprovacao' %}bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300
               {% elif vaga.status_vaga in ('aprovada', 'aprovada_ressalvas') %}bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300
               {% elif vaga.status_vaga == 'em_recrutamento' %}bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300
+              {% elif vaga.status_vaga == 'em_entrevistas' %}bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300
+              {% elif vaga.status_vaga == 'concluida' %}bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300
               {% else %}bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300{% endif %}">
               {{ vaga.status_vaga | replace('_', ' ') | title }}
             </span>

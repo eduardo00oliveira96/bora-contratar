@@ -77,6 +77,7 @@
             <form action="{{ url_for('public.vaga_apply', id=vaga.id) }}" method="POST" enctype="multipart/form-data"
                 class="space-y-4" id="candidatura-form">
 
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" id="vaga_id" value="{{ vaga.id }}">
 
                 <div>
@@ -145,8 +146,20 @@
                     </div>
                 </div>
 
-                <button type="submit" id="btn-submit"
-                    class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 mt-4 text-center block">
+                <div class="flex items-start gap-2">
+                    <input type="checkbox" id="aceito_termos" name="aceito_termos" required
+                        class="mt-1 h-4 w-4 text-brand-600 focus:ring-brand-500 border-slate-300 dark:border-slate-600 rounded">
+                    <label for="aceito_termos" class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Li e aceito a
+                        <a href="{{ url_for('public.privacidade') }}" target="_blank" class="text-brand-600 hover:text-brand-700 underline font-medium">
+                            Política de Privacidade
+                        </a>
+                        , incluindo a avaliação automatizada do meu currículo por inteligência artificial.
+                    </label>
+                </div>
+
+                <button type="submit" id="btn-submit" disabled
+                    class="w-full font-bold py-3 px-4 rounded-lg shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 mt-4 text-center block bg-slate-300 dark:bg-slate-600 text-white cursor-not-allowed">
                     Enviar Candidatura
                 </button>
             </form>
@@ -180,20 +193,45 @@
         input.value = value;
     }
 
-    // Capture the submission and set the hidden input with the +55 prefix before sending
-    document.querySelector('form').addEventListener('submit', function (e) {
-        let visualInput = document.getElementById('telefone_visual');
-        let hiddenInput = document.getElementById('telefone');
+    function checkFormValidity() {
+        var nome = document.getElementById('nome').value.trim();
+        var cpf = document.getElementById('cpf').value.replace(/\D/g, "");
+        var telefone = document.getElementById('telefone_visual').value.replace(/\D/g, "");
+        var email = document.getElementById('email').value.trim();
+        var curriculo = document.getElementById('curriculo').files.length > 0;
+        var aceitoTermos = document.getElementById('aceito_termos').checked;
 
-        let cleanPhone = visualInput.value.replace(/\D/g, "");
+        var btn = document.getElementById('btn-submit');
+        var valid = nome && cpf.length === 11 && telefone.length >= 10 && email && curriculo && aceitoTermos;
+
+        if (valid) {
+            btn.disabled = false;
+            btn.className = 'w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 mt-4 text-center block';
+        } else {
+            btn.disabled = true;
+            btn.className = 'w-full bg-slate-300 dark:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 mt-4 text-center block cursor-not-allowed';
+        }
+    }
+
+    document.querySelectorAll('#nome, #cpf, #telefone_visual, #email, #curriculo, #aceito_termos').forEach(function (el) {
+        el.addEventListener('input', checkFormValidity);
+        el.addEventListener('change', checkFormValidity);
+    });
+
+    checkFormValidity();
+
+    document.querySelector('form').addEventListener('submit', function (e) {
+        var visualInput = document.getElementById('telefone_visual');
+        var hiddenInput = document.getElementById('telefone');
+
+        var cleanPhone = visualInput.value.replace(/\D/g, "");
         if (cleanPhone) {
             hiddenInput.value = "+55" + cleanPhone;
         }
 
-        let cpfInput = document.getElementById('cpf');
-        let cleanCpf = cpfInput.value.replace(/\D/g, "");
+        var cpfInput = document.getElementById('cpf');
+        var cleanCpf = cpfInput.value.replace(/\D/g, "");
 
-        // Very basic frontend validation
         if (cleanCpf.length !== 11) {
             e.preventDefault();
             alert("O CPF deve conter 11 dígitos.");

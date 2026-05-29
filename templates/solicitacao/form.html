@@ -1,5 +1,44 @@
-{% extends "admin_base.html" %}  
+{% extends "admin_base.html" %}
 {% block title %}Solicitar Contratação | Bora Contratar{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var fichaSelect = document.getElementById('ficha_id');
+  var tipoRadios = document.querySelectorAll('input[name="tipo_solicitacao"]');
+  var tituloInput = document.getElementById('titulo');
+
+  var labels = {
+    'aumento_quadro': 'Aumento de Quadro',
+    'substituicao': 'Substituição',
+    'temporario': 'Temporário',
+    'estagio': 'Estágio'
+  };
+
+  function atualizarTitulo() {
+    var fichaText = fichaSelect.options[fichaSelect.selectedIndex]?.text;
+    var fichaNome = fichaText ? fichaText.split(' — ')[0] : '';
+    if (fichaText && fichaText !== 'Selecione uma ficha...') {
+      fichaNome = fichaText.split(' — ')[0];
+    } else {
+      fichaNome = '';
+    }
+
+    if (fichaNome) {
+      tituloInput.value = fichaNome;
+    } else {
+      tituloInput.value = '';
+    }
+  }
+
+  fichaSelect.addEventListener('change', atualizarTitulo);
+  tipoRadios.forEach(function(r) {
+    r.addEventListener('change', atualizarTitulo);
+  });
+});
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="mb-6">
@@ -12,60 +51,77 @@
 <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 max-w-3xl mx-auto transition-colors">
     <div class="mb-8 border-b border-slate-100 dark:border-slate-700 pb-6">
         <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">Solicitar Contratação</h1>
-        <p class="text-slate-500 dark:text-slate-400 mt-1">Preencha os dados básicos. O RH completará a ficha técnica do cargo.</p>
+        <p class="text-slate-500 dark:text-slate-400 mt-1">Selecione a ficha técnica do cargo e preencha os dados da solicitação.</p>
     </div>
 
     <form method="POST" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="md:col-span-2">
-                <label for="titulo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Título do Cargo *</label>
-                <input type="text" id="titulo" name="titulo" required
-                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
-            </div>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+        <div class="bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-xl p-6 space-y-4">
             <div>
-                <label for="tipo_solicitacao" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo de Solicitação *</label>
-                <select id="tipo_solicitacao" name="tipo_solicitacao" required
-                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
-                    <option value="">Selecione...</option>
-                    <option value="aumento_quadro">Aumento de Quadro</option>
-                    <option value="substituicao">Substituição</option>
-                    <option value="temporario">Temporário / Projeto</option>
-                    <option value="estagio">Estágio / Jovem Aprendiz</option>
-                </select>
-            </div>
-
-            <div>
-                <label for="centro_custo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Centro de Custo / Orçamento</label>
-                <input type="text" id="centro_custo" name="centro_custo"
-                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-                    placeholder="Ex: CC-2024-0123">
-            </div>
-
-            <div>
-                <label for="previsao_inicio" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Previsão de Início</label>
-                <input type="date" id="previsao_inicio" name="previsao_inicio"
-                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
-            </div>
-
-            <div class="md:col-span-2">
-                <label for="justificativa" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Justificativa da Necessidade *</label>
-                <textarea id="justificativa" name="justificativa" rows="3" required
-                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-                    placeholder="Explique por que esta contratação é necessária..."></textarea>
-            </div>
-
-            <div class="md:col-span-2">
-                <label for="ficha_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ficha Técnica do Cargo</label>
-                <select id="ficha_id" name="ficha_id"
-                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                <label for="ficha_id" class="block text-sm font-semibold text-brand-700 dark:text-brand-300 mb-1">
+                    <i class="fa-solid fa-file-lines mr-1"></i> Ficha Técnica do Cargo *
+                </label>
+                <select id="ficha_id" name="ficha_id" required
+                    class="w-full px-4 py-3 border border-brand-300 dark:border-brand-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all text-base">
                     <option value="">Selecione uma ficha...</option>
                     {% for f in fichas %}
                     <option value="{{ f.id }}">{{ f.titulo }} — {{ f.local_trabalho or '' }} {{ '(' + f.tipo_contrato + ')' if f.tipo_contrato else '' }}</option>
                     {% endfor %}
                 </select>
-                <p class="text-xs text-slate-400 mt-1">Fichas cadastradas pelo RH. Se não encontrar, selecione "Outro" e o RH preencherá na triagem.</p>
+                <p class="text-xs text-slate-400 mt-1">Fichas cadastradas pelo RH. Se não encontrar o cargo ideal, escolha a mais próxima.</p>
             </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-brand-700 dark:text-brand-300 mb-2">
+                    <i class="fa-solid fa-tag mr-1"></i> Tipo de Solicitação *
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center gap-2 p-3 border border-brand-200 dark:border-brand-700 rounded-lg cursor-pointer hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors">
+                        <input type="radio" name="tipo_solicitacao" value="aumento_quadro"
+                            class="text-brand-600 focus:ring-brand-500">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Aumento de Quadro</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-3 border border-brand-200 dark:border-brand-700 rounded-lg cursor-pointer hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors">
+                        <input type="radio" name="tipo_solicitacao" value="substituicao"
+                            class="text-brand-600 focus:ring-brand-500">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Substituição</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-3 border border-brand-200 dark:border-brand-700 rounded-lg cursor-pointer hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors">
+                        <input type="radio" name="tipo_solicitacao" value="temporario"
+                            class="text-brand-600 focus:ring-brand-500">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Temporário / Projeto</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-3 border border-brand-200 dark:border-brand-700 rounded-lg cursor-pointer hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors">
+                        <input type="radio" name="tipo_solicitacao" value="estagio"
+                            class="text-brand-600 focus:ring-brand-500">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Estágio / Jovem Aprendiz</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+            <label for="titulo" class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Título do Cargo</label>
+            <input type="text" id="titulo" name="titulo" readonly
+                class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-not-allowed text-base"
+                placeholder="Selecione a ficha e o tipo acima...">
+            <p class="text-xs text-slate-400 mt-1">Gerado automaticamente com base na ficha e tipo de solicitação.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="previsao_inicio" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Previsão de Início</label>
+                <input type="date" id="previsao_inicio" name="previsao_inicio"
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+            </div>
+        </div>
+
+        <div>
+            <label for="justificativa" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Justificativa da Necessidade *</label>
+            <textarea id="justificativa" name="justificativa" rows="3" required
+                class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                placeholder="Explique por que esta contratação é necessária..."></textarea>
         </div>
 
         <div class="pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">

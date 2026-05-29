@@ -2,12 +2,14 @@ from database.conexao_supabase import get_supabase_client, get_tenant_id
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-STATUS_ORDER = ['solicitada', 'em_triagem', 'aguardando_aprovacao', 'aprovada', 'aprovada_ressalvas', 'em_recrutamento', 'publicada', 'rascunho', 'encerrada']
+STATUS_ORDER = ['solicitada', 'em_triagem', 'ajustes_pendentes', 'aguardando_aprovacao', 'aprovada', 'aprovada_ressalvas', 'em_recrutamento', 'publicada', 'em_entrevistas', 'concluida', 'rascunho', 'encerrada']
 STATUS_LABELS = {
     'solicitada': 'Solicitada', 'em_triagem': 'Em Triagem',
+    'ajustes_pendentes': 'Ajustes Pendentes',
     'aguardando_aprovacao': 'Aguard. Aprovação', 'aprovada': 'Aprovada',
     'aprovada_ressalvas': 'Aprovada c/ Ressalvas', 'em_recrutamento': 'Em Recrutamento',
-    'publicada': 'Publicada', 'rascunho': 'Rascunho', 'encerrada': 'Encerrada',
+    'publicada': 'Publicada', 'em_entrevistas': 'Em Entrevistas', 'concluida': 'Concluída',
+    'rascunho': 'Rascunho', 'encerrada': 'Encerrada',
 }
 
 
@@ -26,7 +28,7 @@ def get_kpis():
     vagas = client.table('vagas').select('id,status_vaga').eq('tenant_id', tenant_id).execute()
     vagas_data = vagas.data or []
 
-    vagas_ativas = sum(1 for v in vagas_data if v.get('status_vaga') in ('publicada', 'em_recrutamento'))
+    vagas_ativas = sum(1 for v in vagas_data if v.get('status_vaga') in ('publicada', 'em_recrutamento', 'em_entrevistas'))
     vagas_encerradas = sum(1 for v in vagas_data if v.get('status_vaga') == 'encerrada')
     total_vagas = len(vagas_data)
 
@@ -74,9 +76,11 @@ def get_vagas_por_status():
     values = []
     colors = {
         'solicitada': '#f59e0b', 'em_triagem': '#3b82f6',
+        'ajustes_pendentes': '#f97316',
         'aguardando_aprovacao': '#8b5cf6', 'aprovada': '#10b981',
         'aprovada_ressalvas': '#f59e0b', 'em_recrutamento': '#06b6d4',
-        'publicada': '#10b981', 'rascunho': '#94a3b8', 'encerrada': '#ef4444',
+        'publicada': '#10b981', 'em_entrevistas': '#ec4899', 'concluida': '#6366f1',
+        'rascunho': '#94a3b8', 'encerrada': '#ef4444',
     }
 
     for s in STATUS_ORDER:

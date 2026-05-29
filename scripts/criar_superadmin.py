@@ -5,6 +5,7 @@ Use: python scripts/criar_superadmin.py
 
 import os
 import sys
+import getpass
 import requests
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -15,14 +16,13 @@ from database.conexao_supabase import get_supabase_client, TENANT_SLUG_PADRAO
 SUPABASE_URL = os.getenv("SUPABASE_URL", "http://localhost:8000")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-EMAIL = "superadmin@boracontratar.com"
-PASSWORD = "admin123"
+EMAIL = os.getenv("SUPERADMIN_EMAIL") or input("Email do superadmin: ").strip()
+PASSWORD = os.getenv("SUPERADMIN_PASSWORD") or getpass.getpass("Senha do superadmin: ")
 
 
 def main():
     client = get_supabase_client()
 
-    # 1. Garantir que o tenant "Bora Contratar" existe
     tenants = client.table("tenants").select("id").eq("slug", TENANT_SLUG_PADRAO).execute()
     if tenants.data:
         tenant_id = tenants.data[0]["id"]
@@ -35,13 +35,11 @@ def main():
         tenant_id = result.data[0]["id"]
         print(f"Tenant criado: {tenant_id}")
 
-    # 2. Verificar se já existe superadmin
     existing = client.table("usuarios").select("id").eq("email", EMAIL).limit(1).execute()
     if existing.data:
         print(f"Superadmin já existe: {existing.data[0]['id']}")
         return
 
-    # 3. Criar usuário no Supabase Auth
     print(f"Criando usuário auth para {EMAIL}...")
     resp = requests.post(
         f"{SUPABASE_URL}/auth/v1/signup",
@@ -56,7 +54,6 @@ def main():
     auth_user_id = resp.json()["user"]["id"]
     print(f"Auth user criado: {auth_user_id}")
 
-    # 4. Criar perfil superadmin
     client.table("usuarios").insert({
         "tenant_id": tenant_id,
         "auth_user_id": auth_user_id,
@@ -67,7 +64,6 @@ def main():
 
     print(f"\nSuperadmin criado com sucesso!")
     print(f"  Email: {EMAIL}")
-    print(f"  Senha: {PASSWORD}")
     print(f"  Papel: superadmin")
 
 

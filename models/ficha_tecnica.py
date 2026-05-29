@@ -44,7 +44,18 @@ def atualizar_ficha(ficha_id, data):
     if not tenant_id:
         return
     client = get_supabase_client()
-    payload = {k: v for k, v in data.items() if v is not None}
+    campos_validos = {"titulo", "descricao", "local_trabalho", "tipo_contrato",
+                      "requisitos", "habilidades", "salario", "beneficios"}
+    payload = {}
+    for k, v in data.items():
+        if v is None:
+            continue
+        if k == "contrato_trabalho":
+            k = "tipo_contrato"
+        if k in campos_validos:
+            payload[k] = v
+    if not payload:
+        return
     payload["updated_at"] = "now()"
     client.table("fichas_tecnicas").update(payload).eq("id", ficha_id).eq("tenant_id", tenant_id).execute()
 
@@ -54,3 +65,21 @@ def arquivar_ficha(ficha_id):
         return
     client = get_supabase_client()
     client.table("fichas_tecnicas").update({"ativo": False, "updated_at": "now()"}).eq("id", ficha_id).eq("tenant_id", tenant_id).execute()
+
+def get_ficha_beneficios(ficha_id):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return []
+    client = get_supabase_client()
+    result = client.table("ficha_beneficios").select("beneficio_id").eq("ficha_id", ficha_id).execute()
+    return [row["beneficio_id"] for row in (result.data or [])]
+
+def set_ficha_beneficios(ficha_id, beneficio_ids):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return
+    client = get_supabase_client()
+    client.table("ficha_beneficios").delete().eq("ficha_id", ficha_id).execute()
+    if beneficio_ids:
+        rows = [{"ficha_id": ficha_id, "beneficio_id": bid} for bid in beneficio_ids]
+        client.table("ficha_beneficios").insert(rows).execute()

@@ -1,0 +1,100 @@
+{% extends "admin_base.html" %}
+{% block title %}Notificações | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white">Notificações</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Acompanhe o status das suas solicitações</p>
+    </div>
+    {% if notificacoes %}
+    <button onclick="marcarTodasLidas()"
+            class="group inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 hover:bg-brand-100 dark:hover:bg-brand-900/50 rounded-lg border border-brand-200 dark:border-brand-800 hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-200">
+      <span class="flex items-center justify-center w-5 h-5 rounded-full bg-brand-200 dark:bg-brand-800 text-brand-700 dark:text-brand-300 group-hover:bg-brand-300 dark:group-hover:bg-brand-700 transition-colors">
+        <i class="fa-solid fa-check text-[10px]"></i>
+      </span>
+      <span>Marcar todas como lidas</span>
+    </button>
+    {% endif %}
+  </div>
+
+  {% if notificacoes %}
+  <div class="space-y-2">
+    {% for n in notificacoes %}
+    <a href="{{ url_for('solicitacao.detalhes', id=n.vaga_id) if n.vaga_id else '#' }}"
+       data-notificacao-id="{{ n.id }}"
+       class="block bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:border-brand-300 dark:hover:border-brand-700 transition-colors {% if not n.lida %}border-l-4 border-l-brand-500{% endif %}">
+      <div class="flex items-start gap-3">
+        <div class="mt-0.5">
+          {% if n.tipo in ('validada', 'aprovado') %}
+          <i class="fa-regular fa-circle-check text-emerald-500 text-lg"></i>
+          {% elif n.tipo in ('ajustes',) %}
+          <i class="fa-regular fa-pen-to-square text-amber-500 text-lg"></i>
+          {% elif n.tipo in ('reprovada_rh', 'reprovado', 'recusada') %}
+          <i class="fa-regular fa-circle-xmark text-red-500 text-lg"></i>
+          {% elif n.tipo == 'aprovado_ressalvas' %}
+          <i class="fa-regular fa-circle-check text-amber-500 text-lg"></i>
+          {% elif n.tipo in ('entrevista_agendada', 'entrevista_reagendada') %}
+          <i class="fa-regular fa-calendar-check text-brand-500 text-lg"></i>
+          {% elif n.tipo == 'candidato_aprovado' %}
+          <i class="fa-regular fa-circle-check text-emerald-500 text-lg"></i>
+          {% elif n.tipo == 'candidato_reprovado' %}
+          <i class="fa-regular fa-circle-xmark text-red-500 text-lg"></i>
+          {% elif n.tipo == 'candidato_contratado' %}
+          <i class="fa-solid fa-handshake text-blue-500 text-lg"></i>
+          {% else %}
+          <i class="fa-regular fa-bell text-slate-400 text-lg"></i>
+          {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold text-slate-900 dark:text-white {% if not n.lida %}text-brand-700 dark:text-brand-400{% endif %}">
+              {{ n.titulo }}
+            </p>
+            {% if not n.lida %}
+            <span class="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400">Nova</span>
+            {% endif %}
+          </div>
+          {% if n.mensagem %}
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ n.mensagem }}</p>
+          {% endif %}
+          <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ n.created_at[:10] }} às {{ n.created_at[11:16] }}</p>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center">
+    <i class="fa-regular fa-bell-slash text-slate-300 dark:text-slate-600 text-5xl mb-4"></i>
+    <p class="text-slate-500 dark:text-slate-400">Nenhuma notificação</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+var csrfToken = '{{ csrf_token() }}';
+
+function marcarTodasLidas() {
+  fetch('{{ url_for("notificacao.ler_todas") }}', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken }
+  })
+    .then(r => r.json())
+    .then(() => { window.location.reload(); });
+}
+
+document.querySelectorAll('a[data-notificacao-id]').forEach(function(el) {
+  el.addEventListener('click', function() {
+    var id = this.getAttribute('data-notificacao-id');
+    if (id) {
+      fetch('/notificacoes/' + id + '/ler', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken }
+      }).catch(function(){});
+    }
+  });
+});
+</script>
+{% endblock %}

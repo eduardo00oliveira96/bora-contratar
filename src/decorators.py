@@ -1,18 +1,27 @@
 import os
 from functools import wraps
-from flask import session, redirect, url_for, request, g
+from flask import session, redirect, url_for, request, g, flash
 import jwt as pyjwt
 
-JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "9f2c1b7e4a8d6f3c0e5b2a1d9c7e6f4b3a2c1d0e8f7a6b5c")
+JWT_SECRET = os.environ["SUPABASE_JWT_SECRET"]
+
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user" not in session:
             return redirect(url_for("auth.login", next=request.url))
+        token = session.get("access_token")
+        if token:
+            payload = verificar_jwt(token)
+            if not payload:
+                session.clear()
+                flash("Sessão expirada. Faça login novamente.", "warning")
+                return redirect(url_for("auth.login"))
         g.usuario = session["user"]
         return f(*args, **kwargs)
     return decorated_function
+
 
 def role_required(*papeis_permitidos):
     def decorator(f):
@@ -24,6 +33,7 @@ def role_required(*papeis_permitidos):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
 
 def verificar_jwt(token):
     try:

@@ -6,37 +6,42 @@ from database.conexao_supabase import get_supabase_client
 
 BUCKET_NAME = "curriculos"
 UPLOAD_DIR = "upload_curriculos"
+ALLOWED_EXTENSIONS = {'.pdf'}
+MAX_FILE_SIZE = 10 * 1024 * 1024
+
 
 def upload_curriculo(file_storage):
     if not file_storage or file_storage.filename == '':
         return None
 
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    ext = os.path.splitext(file_storage.filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        return None
+
+    file_content = file_storage.read()
+    if len(file_content) > MAX_FILE_SIZE:
+        return None
+
+    if file_content[:4] != b'%PDF':
+        return None
+
+    file_storage.seek(0)
 
     filename = secure_filename(file_storage.filename)
     safe_filename = f"{int(time.time())}_{uuid.uuid4().hex[:8]}_{filename}"
 
-    local_path = os.path.join(UPLOAD_DIR, safe_filename)
-    file_storage.save(local_path)
-
     try:
         client = get_supabase_client()
-
-        with open(local_path, "rb") as f:
-            file_content = f.read()
-
-        result = client.storage.from_(BUCKET_NAME).upload(
+        client.storage.from_(BUCKET_NAME).upload(
             path=safe_filename,
             file=file_content,
             file_options={"content-type": "application/pdf"}
         )
-
-        os.remove(local_path)
         return safe_filename
-
     except Exception as e:
         print(f"Erro ao fazer upload para Supabase Storage: {e}")
         return None
+
 
 def get_curriculo_url(file_path, expires_in=3600):
     if not file_path:
@@ -51,6 +56,7 @@ def get_curriculo_url(file_path, expires_in=3600):
     except Exception as e:
         print(f"Erro ao gerar URL signed: {e}")
         return None
+
 
 def delete_curriculo(file_path):
     if not file_path:

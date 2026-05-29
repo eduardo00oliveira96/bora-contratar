@@ -112,9 +112,7 @@ def criar_solicitacao(data):
         "gestor_owner_id": data.get("gestor_owner_id"),
         "tipo_solicitacao": data.get("tipo_solicitacao"),
         "justificativa": data.get("justificativa"),
-        "centro_custo": data.get("centro_custo"),
         "previsao_inicio": data.get("previsao_inicio"),
-        "ficha_tecnica_link": data.get("ficha_tecnica_link"),
         "status_vaga": "solicitada",
     }
     result = client.table("vagas").insert(payload).execute()
@@ -128,6 +126,17 @@ def preencher_ficha_tecnica(vaga_id, data):
         return
     client = get_supabase_client()
     payload = {k: v for k, v in data.items() if v is not None and v != ""}
+
+    if "beneficios" in payload:
+        beneficios_val = payload["beneficios"]
+        if beneficios_val:
+            ids_raw = [x.strip() for x in beneficios_val.split(",") if x.strip()]
+            if ids_raw and len(ids_raw[0]) == 36 and "-" in ids_raw[0]:
+                ben_result = client.table("beneficios").select("id, nome").eq("tenant_id", tenant_id).execute()
+                nome_map = {b["id"]: b["nome"] for b in (ben_result.data or [])}
+                nomes = [nome_map.get(bid, bid) for bid in ids_raw]
+                payload["beneficios"] = ", ".join(nomes)
+
     if not payload:
         return
     payload["updated_at"] = "now()"
@@ -146,7 +155,7 @@ def triar_solicitacao(vaga_id, parecer_rh, observacoes=""):
     if parecer_rh == "validada":
         payload["status_vaga"] = "em_triagem"
     elif parecer_rh == "ajustes":
-        payload["status_vaga"] = "solicitada"
+        payload["status_vaga"] = "ajustes_pendentes"
     elif parecer_rh == "reprovada_rh":
         payload["status_vaga"] = "encerrada"
         payload["ativo"] = False
@@ -224,3 +233,19 @@ def get_all_vagas_status(status_list):
     client = get_supabase_client()
     result = client.table("vagas").select("*").eq("tenant_id", tenant_id).in_("status_vaga", status_list).order("created_at", desc=True).execute()
     return result.data if result.data else []
+
+
+def get_solicitacoes_ajustes_pendentes(usuario_id):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return []
+    client = get_supabase_client()
+    result = client.table("vagas").select("*").eq("tenant_id", tenant_id).eq("criado_por", usuario_id).eq("status_vaga", "ajustes_pendentes").order("updated_at", desc=True).execute()
+    return result.data or []
+
+def iniciar_entrevistas_vaga(vaga_id):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return
+    client = get_supabase_client()
+    client.table("vagas").update({"status_vaga": "em_entrevistas", "updated_at": "now()"}).eq("id", vaga_id).eq("tenant_id", tenant_id).execute()

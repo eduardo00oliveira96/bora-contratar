@@ -1,6 +1,137 @@
 {% extends "admin_base.html" %}  
 {% block title %}{% if ficha %}Editar{% else %}Nova{% endif %} Ficha Técnica | Bora Contratar{% endblock %}
 
+{% block head %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('[data-multiselect]').forEach(function(el) {
+    var hiddenContainer = el.querySelector('[data-hidden-inputs]');
+    var trigger = el.querySelector('[data-trigger]');
+    var dropdown = el.querySelector('[data-dropdown]');
+    var tagContainer = el.querySelector('[data-tags]');
+    var placeholder = el.querySelector('[data-placeholder]');
+
+    // Build items and selected from checkboxes + hidden inputs
+    var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+    // For edit: read existing hidden inputs (already rendered by server)
+    // For initial state: read checked checkboxes
+    var initialSelected = [];
+    checkboxes.forEach(function(cb) {
+      if (cb.checked) {
+        var label = cb.closest('label');
+        var text = label ? label.querySelector('.item-text').textContent : cb.value;
+        initialSelected.push({ id: cb.value, nome: text });
+      }
+    });
+    // But we also need to reconcile with hidden inputs for edit mode
+    // Strategy: on form submit, hidden inputs are already handled by template
+    // For the JS, we track state via the hidden inputs
+    // Actually simpler: maintain state array, sync both checkboxes and hidden inputs
+
+    var state = {
+      items: [],
+      selected: []
+    };
+
+    // Build items list from checkboxes
+    checkboxes.forEach(function(cb) {
+      var label = cb.closest('label');
+      var text = label ? label.querySelector('.item-text').textContent : cb.value;
+      if (cb.checked) {
+        state.selected.push({ id: cb.value, nome: text });
+      }
+    });
+
+    function renderTags() {
+      tagContainer.innerHTML = '';
+      if (state.selected.length === 0) {
+        placeholder.classList.remove('hidden');
+      } else {
+        placeholder.classList.add('hidden');
+        state.selected.forEach(function(item) {
+          var span = document.createElement('span');
+          span.className = 'inline-flex items-center gap-1 px-2 py-0.5 bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 text-xs font-medium rounded-full';
+          span.innerHTML = '<span>' + item.nome + '</span>' +
+            '<i data-remove="' + item.id + '" class="fa-solid fa-xmark cursor-pointer hover:text-brand-900 dark:hover:text-brand-100"></i>';
+          tagContainer.appendChild(span);
+        });
+        // Bind remove events
+        tagContainer.querySelectorAll('[data-remove]').forEach(function(icon) {
+          icon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            removeItem(this.getAttribute('data-remove'));
+          });
+        });
+      }
+      syncHidden();
+      syncCheckboxes();
+    }
+
+    function syncHidden() {
+      hiddenContainer.innerHTML = '';
+      state.selected.forEach(function(item) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'beneficios';
+        input.value = item.id;
+        hiddenContainer.appendChild(input);
+      });
+    }
+
+    function syncCheckboxes() {
+      var ids = state.selected.map(function(s) { return s.id; });
+      checkboxes.forEach(function(cb) {
+        cb.checked = ids.indexOf(cb.value) !== -1;
+      });
+    }
+
+    function removeItem(id) {
+      state.selected = state.selected.filter(function(s) { return s.id !== id; });
+      renderTags();
+    }
+
+    function toggleItem(id, nome) {
+      var idx = state.selected.findIndex(function(s) { return s.id === id; });
+      if (idx === -1) {
+        state.selected.push({ id: id, nome: nome });
+      } else {
+        state.selected.splice(idx, 1);
+      }
+      renderTags();
+    }
+
+    // Expose toggle for the trigger
+    trigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      dropdown.classList.toggle('hidden');
+      trigger.querySelector('.chevron').classList.toggle('rotate-180');
+    });
+
+    // Click on checkboxes
+    checkboxes.forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        var label = cb.closest('label');
+        var text = label ? label.querySelector('.item-text').textContent : cb.value;
+        toggleItem(cb.value, text);
+      });
+    });
+
+    // Close on click outside
+    document.addEventListener('click', function(e) {
+      if (!el.contains(e.target)) {
+        dropdown.classList.add('hidden');
+        trigger.querySelector('.chevron').classList.remove('rotate-180');
+      }
+    });
+
+    // Initial render
+    renderTags();
+  });
+});
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="mb-6">
     <a href="{{ url_for('admin.fichas_listar') }}"
@@ -18,6 +149,7 @@
     </div>
 
     <form method="POST" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="md:col-span-2">
                 <label for="titulo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Título do Cargo *</label>
@@ -72,11 +204,36 @@
                     class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
             </div>
 
-            <div>
-                <label for="beneficios" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Benefícios</label>
-                <input type="text" id="beneficios" name="beneficios" value="{{ ficha.beneficios if ficha else '' }}"
-                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-                    placeholder="Vale Refeição, Plano de Saúde, etc">
+            <div data-multiselect class="relative">
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Benefícios</label>
+                    <a href="{{ url_for('admin.beneficios_listar') }}"
+                        class="text-brand-600 hover:text-brand-700 text-xs font-medium flex items-center gap-1 transition-colors">
+                        <i class="fa-solid fa-pencil"></i> Gerenciar
+                    </a>
+                </div>
+                <div data-trigger
+                    class="w-full min-h-[42px] px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white cursor-pointer flex items-center gap-1.5 flex-wrap transition-all hover:border-brand-400">
+                    <div data-tags class="flex items-center gap-1.5 flex-wrap"></div>
+                    <span data-placeholder class="text-slate-400 text-sm">Selecione os benefícios...</span>
+                    <i class="chevron fa-solid fa-chevron-down ml-auto text-slate-400 text-xs transition-transform"></i>
+                </div>
+                <div data-dropdown class="hidden absolute z-20 mt-1 w-full border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 shadow-lg max-h-56 overflow-y-auto">
+                    {% for b in beneficios %}
+                    <label class="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <input type="checkbox" value="{{ b.id }}"
+                            {% if ficha_beneficios_ids and b.id in ficha_beneficios_ids %}checked{% endif %}
+                            class="rounded border-slate-300 dark:border-slate-600 text-brand-600 focus:ring-brand-500">
+                        <span class="item-text text-sm text-slate-700 dark:text-slate-300">{{ b.nome }}</span>
+                    </label>
+                    {% else %}
+                    <div class="px-3 py-4 text-sm text-slate-400 text-center">
+                        Nenhum benefício cadastrado.
+                        <a href="{{ url_for('admin.beneficios_novo') }}" class="text-brand-600 hover:text-brand-700 font-medium">Cadastrar</a>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div data-hidden-inputs></div>
             </div>
         </div>
 

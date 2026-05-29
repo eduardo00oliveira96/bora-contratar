@@ -1,0 +1,157 @@
+{% extends "admin_base.html" %}
+{% block title %}Agenda de Entrevistas | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <div>
+    <a href="{{ url_for('admin.entrevistas_listar') }}"
+       class="text-brand-600 hover:text-brand-700 font-medium flex items-center mb-1 text-sm">
+      <i class="fa-solid fa-arrow-left mr-2"></i> Voltar para Entrevistas
+    </a>
+    <h1 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+      <i class="fa-solid fa-calendar-days text-brand-500"></i> Agenda de Entrevistas
+      {% if total > 0 %}
+      <span class="text-sm font-normal text-slate-500 dark:text-slate-400">({{ total }} agendada{{ 's' if total != 1 }})</span>
+      {% endif %}
+    </h1>
+  </div>
+</div>
+
+{% if total == 0 %}
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-10 text-center">
+  <i class="fa-solid fa-calendar-day text-4xl text-slate-300 dark:text-slate-600 mb-4"></i>
+  <p class="text-slate-500 dark:text-slate-400 font-medium">Nenhuma entrevista agendada</p>
+  <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">As entrevistas agendadas aparecerão aqui.</p>
+</div>
+{% else %}
+
+{% set hoje = None %}
+{% set amanha = None %}
+{% set hoje_str = '' %}
+{% set amanha_str = '' %}
+{% set ns = namespace(today='') %}
+
+{% for dia, items in grupos.items() %}
+{% set loop_ns = namespace(label=dia) %}
+
+{% if loop.first %}
+  {% set hoje_str = dia %}
+  {% set ns.today = dia %}
+{% endif %}
+
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-3">
+    <div class="w-8 h-8 rounded-full
+      {% if dia == hoje_str %}bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300
+      {% elif dia %}bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400
+      {% else %}bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400{% endif %}
+      flex items-center justify-center text-xs font-bold">
+      <i class="fa-solid
+        {% if dia == hoje_str %}fa-calendar-check
+        {% else %}fa-calendar-day{% endif %}"></i>
+    </div>
+    <h2 class="text-sm font-bold text-slate-900 dark:text-white">
+      {% if dia == hoje_str %}
+        Hoje
+      {% else %}
+        {{ dia }}
+      {% endif %}
+    </h2>
+    <span class="text-xs text-slate-400 dark:text-slate-500">{{ items|length }} entrevista{{ 's' if items|length != 1 }}</span>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    {% for item in items %}
+    {% set hora = (item.agendado_para or '')[:16] %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 border-l-4 border-l-brand-400 shadow-sm p-4 transition-colors" id="card-{{ item.id }}">
+      <div class="flex items-start justify-between mb-2">
+        <div class="min-w-0 flex-1">
+          <a href="{{ url_for('entrevista.candidato_progresso', id=item.candidatura_id) }}"
+             class="text-sm font-semibold text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 truncate block">
+            {{ item.candidato_nome }}
+          </a>
+          <p class="text-[11px] text-slate-400 truncate">{{ item.vaga_titulo }}</p>
+        </div>
+        <span class="shrink-0 ml-2 text-xs font-medium px-2 py-0.5 rounded-md bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300">
+          {{ item.etapa_titulo }}
+        </span>
+      </div>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <i class="fa-regular fa-clock"></i>
+          {% if hora %}
+          <span>{{ hora | replace('T', ' às ') }}</span>
+          {% else %}
+          <span>Sem horário</span>
+          {% endif %}
+        </div>
+        {% if g.usuario.papel not in ('gestor',) %}
+        <button onclick="toggleRemarcar('{{ item.id }}')"
+                class="text-xs px-2.5 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800/60 transition-colors flex items-center gap-1">
+          <i class="fa-solid fa-pen"></i> Remarcar
+        </button>
+        {% endif %}
+      </div>
+      <div id="remarcar-{{ item.id }}" class="hidden mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+        <div class="flex gap-2 items-center">
+          <input type="datetime-local" id="data-{{ item.id }}"
+                 class="flex-1 text-xs px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
+                 value="{{ hora }}">
+          <button onclick="confirmarRemarcar('{{ item.id }}')"
+                  class="shrink-0 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1">
+            <i class="fa-solid fa-check"></i> Confirmar
+          </button>
+          <button onclick="toggleRemarcar('{{ item.id }}')"
+                  class="shrink-0 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-xs rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <p id="erro-{{ item.id }}" class="text-[11px] text-red-500 hidden mt-1"></p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const csrfToken = '{{ csrf_token() }}';
+
+function toggleRemarcar(id) {
+  var el = document.getElementById('remarcar-' + id);
+  if (el) el.classList.toggle('hidden');
+}
+
+function confirmarRemarcar(id) {
+  const dataEl = document.getElementById('data-' + id);
+  const data = dataEl ? dataEl.value : '';
+  const erroEl = document.getElementById('erro-' + id);
+
+  if (!data) {
+    if (erroEl) { erroEl.textContent = 'Selecione uma data/hora.'; erroEl.classList.remove('hidden'); }
+    return;
+  }
+  if (erroEl) erroEl.classList.add('hidden');
+
+  fetch('/entrevistas/entrevista/' + id + '/reagendar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken },
+    body: 'agendado_para=' + encodeURIComponent(data)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.ok) {
+      window.location.reload();
+    } else {
+      if (erroEl) { erroEl.textContent = d.erro || 'Erro ao remarcar.'; erroEl.classList.remove('hidden'); }
+    }
+  })
+  .catch(function() {
+    if (erroEl) { erroEl.textContent = 'Erro de conexão.'; erroEl.classList.remove('hidden'); }
+  });
+}
+</script>
+{% endblock %}

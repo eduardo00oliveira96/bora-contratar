@@ -1,17 +1,25 @@
 import os
-from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app
+import threading
+import logging
+from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app, g
 from werkzeug.utils import secure_filename
 from models.vaga import get_vaga_by_id, get_all_vagas
-from models.candidatura import create_candidatura, update_candidatura_ai_eval, get_candidatura_by_cpf, update_candidatura_info
+from models.candidatura import create_candidatura, update_candidatura_ai_eval, get_candidatura_by_cpf, update_candidatura_info, update_candidatura_erro, reset_candidatura_ai_eval, get_candidatura_by_id
 from models.candidato import criar_ou_buscar_candidato
 from flask import jsonify
 from services.extrair_texto import extrair_texto_pdf
 from services.obter_dados_vaga import obter_dados_vaga
 from services.upload_curriculo import upload_curriculo, get_curriculo_url
 from ai.agente_avaliar_cv import avaliar_cv
+from src.decorators import login_required, role_required
 
 public_bp = Blueprint('public', __name__)
 UPLOAD_DIR = "upload_curriculos"
+logger = logging.getLogger(__name__)
+
+@public_bp.route('/privacidade')
+def privacidade():
+    return render_template('public/privacidade.html')
 
 @public_bp.route('/')
 def index():
@@ -25,7 +33,19 @@ def vaga_detalhes(id):
         flash("Vaga não encontrada.", "error")
         return redirect(url_for('public.index'))
 
-    beneficios = vaga['beneficios'].split(',') if vaga.get('beneficios') else []
+    beneficios_raw = vaga.get('beneficios') or ''
+    partes = [x.strip() for x in beneficios_raw.split(',') if x.strip()]
+    beneficios = []
+    if partes and len(partes[0]) == 36 and '-' in partes[0]:
+        from database.conexao_supabase import get_supabase_client, get_tenant_id
+        tenant_id = get_tenant_id()
+        if tenant_id:
+            client = get_supabase_client()
+            ben_result = client.table("beneficios").select("id, nome").eq("tenant_id", tenant_id).execute()
+            nome_map = {b["id"]: b["nome"] for b in (ben_result.data or [])}
+            beneficios = [nome_map.get(p, p) for p in partes]
+    else:
+        beneficios = partes
     return render_template('public/vaga.html', vaga=vaga, beneficios=beneficios)
 
 @public_bp.route('/vaga/<uuid:id>/apply', methods=['POST'])
@@ -40,6 +60,11 @@ def vaga_apply(id):
     telefone = request.form.get('telefone')
     email = request.form.get('email')
     curriculo = request.files.get('curriculo')
+    aceito_termos = request.form.get('aceito_termos')
+
+    if not aceito_termos:
+        flash("Você precisa aceitar a Política de Privacidade para se candidatar.", "warning")
+        return redirect(url_for('public.vaga_detalhes', id=id))
 
     candidato_existente = get_candidatura_by_cpf(cpf, str(id))
     existing_id = None
@@ -54,6 +79,7 @@ def vaga_apply(id):
         flash("Nenhum currículo selecionado.", "warning")
         return redirect(url_for('public.vaga_detalhes', id=id))
 
+    local_path = None
     try:
         texto_extraido = ""
         curriculo_path = ""
@@ -101,14 +127,68 @@ def vaga_apply(id):
             flash("Candidatura enviada com sucesso! Boa sorte!", "success")
 
         if texto_extraido:
-            try:
-                vaga_info = obter_dados_vaga(str(id))
-                avaliar_cv(texto_extraido, vaga_info, candidatura_id)
-            except Exception as e_ia:
-                print(f"Erro na IA: {e_ia}")
+            vaga_info = obter_dados_vaga(str(id))
+            thread = threading.Thread(
+                target=_avaliar_cv_background,
+                args=(texto_extraido, vaga_info, candidatura_id),
+                daemon=True
+            )
+            thread.start()
 
     except Exception as e:
-        print(f"Erro inesperado: {e}")
+        logger.error(f"Erro ao processar candidatura: {e}", exc_info=True)
         flash("Ocorreu um erro ao processar sua candidatura. Tente novamente.", "error")
 
+    finally:
+        if local_path and os.path.exists(local_path):
+            try:
+                os.remove(local_path)
+            except Exception as ex:
+                logger.error(f"Erro ao remover arquivo temporario do curriculo: {ex}")
+
     return redirect(url_for('public.vaga_detalhes', id=id))
+
+
+def _avaliar_cv_background(texto, vaga_info, candidatura_id):
+    try:
+        avaliar_cv(texto, vaga_info, candidatura_id)
+    except Exception as e:
+        logger.error(f"Erro na avaliação de IA em background: {e}", exc_info=True)
+        try:
+            update_candidatura_erro(candidatura_id, f"Erro inesperado no processamento: {e}")
+        except Exception:
+            pass
+
+
+@public_bp.route('/candidatura/<uuid:id>/reprocessar-ia', methods=['POST'])
+@login_required
+@role_required('admin', 'rh', 'superadmin')
+def candidato_reprocessar_ia(id):
+    candidatura = get_candidatura_by_id(str(id))
+    if not candidatura:
+        flash("Candidatura não encontrada.", "error")
+        return redirect(url_for('admin.dashboard'))
+
+    resumo = candidatura.get("resumo", "")
+    vaga_id = candidatura.get("vaga_id")
+
+    if not resumo or not resumo.strip():
+        flash("Não há texto extraído do currículo para reprocessar. O candidato precisa reenviar o currículo.", "warning")
+        return redirect(url_for('admin.candidato_detalhes', id=id))
+
+    if not vaga_id:
+        flash("Candidatura sem vaga associada.", "error")
+        return redirect(url_for('admin.candidato_detalhes', id=id))
+
+    reset_candidatura_ai_eval(str(id))
+
+    vaga_info = obter_dados_vaga(vaga_id)
+    thread = threading.Thread(
+        target=_avaliar_cv_background,
+        args=(resumo, vaga_info, str(id)),
+        daemon=True
+    )
+    thread.start()
+
+    flash("Reprocessamento da análise por IA iniciado em segundo plano.", "info")
+    return redirect(url_for('admin.candidato_detalhes', id=id))

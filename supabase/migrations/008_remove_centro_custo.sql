@@ -1,0 +1,1 @@
+ALTER TABLE vagas DROP COLUMN IF EXISTS centro_custo;

@@ -1,0 +1,74 @@
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-800/50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Título</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Solicitante</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                {% for item in items %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ item.titulo }}</p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">{{ item.user_created }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">{{ item.created_at[:10] if item.created_at else '-' }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap
+                            {% if item.status_vaga == 'solicitada' %}bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300
+                            {% elif item.status_vaga == 'em_triagem' %}bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300
+                            {% elif item.status_vaga == 'aguardando_aprovacao' %}bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300
+                            {% elif item.status_vaga in ('aprovada','aprovada_ressalvas') %}bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300
+                            {% elif item.status_vaga == 'em_recrutamento' %}bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300
+                            {% elif item.status_vaga == 'publicada' %}bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300
+                            {% elif item.status_vaga == 'em_entrevistas' %}bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-300
+                            {% elif item.status_vaga == 'concluida' %}bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300
+                            {% else %}bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300{% endif %}">
+                            {% if item.status_vaga == 'solicitada' %}Aguardando Triagem
+                            {% elif item.status_vaga == 'em_triagem' %}Em Triagem
+                            {% elif item.status_vaga == 'aguardando_aprovacao' %}Em Aprovação
+                            {% elif item.status_vaga == 'aprovada' %}Aprovada
+                            {% elif item.status_vaga == 'aprovada_ressalvas' %}Aprovada c/ Ressalvas
+                            {% elif item.status_vaga == 'em_recrutamento' %}Em Recrutamento
+                            {% elif item.status_vaga == 'publicada' %}Publicada
+                            {% elif item.status_vaga == 'em_entrevistas' %}Em Entrevistas
+                            {% elif item.status_vaga == 'concluida' %}Concluída
+                            {% else %}Recusada{% endif %}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {% if acoes and item.status_vaga in ('solicitada', 'em_triagem') %}
+                        <a href="{{ url_for('solicitacao.triar', id=item.id) }}"
+                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-lg transition-colors mr-2">
+                            <i class="fa-solid fa-clipboard-check"></i> Analisar
+                        </a>
+                        <button onclick="openRecusar(this)"
+                            data-id="{{ item.id }}"
+                            data-titulo="{{ item.titulo|e }}"
+                            class="inline-flex items-center gap-1 px-3 py-1.5 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs font-medium rounded-lg transition-colors">
+                            <i class="fa-solid fa-ban"></i> Recusar
+                        </button>
+                        {% else %}
+                        <a href="{{ url_for('solicitacao.detalhes', id=item.id) }}"
+                            class="text-brand-600 hover:text-brand-700 dark:text-brand-400 text-sm transition-colors">
+                            Detalhes <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-10 text-center text-slate-500 dark:text-slate-400">
+                        {{ vazia }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

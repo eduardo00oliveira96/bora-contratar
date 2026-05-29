@@ -1,6 +1,9 @@
 import os
+from urllib.parse import urlparse, urljoin
 import requests
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, g
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from src.decorators import login_required, role_required, verificar_jwt
 from models.usuario import (
     buscar_usuario_por_auth, criar_usuario, listar_tenants,
@@ -10,12 +13,20 @@ from models.usuario import (
 from database.conexao_supabase import get_supabase_client, get_tenant_id
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+limiter = Limiter(key_func=get_remote_address, storage_uri=os.getenv("RATELIMIT_STORAGE_URI", "memory://"))
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "http://localhost:8000")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
+
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def login():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
@@ -46,12 +57,12 @@ def login():
 
             jwt_payload = verificar_jwt(access_token)
             if not jwt_payload:
-                flash("Erro ao verificar token.", "error")
+                flash("Email ou senha inválidos.", "error")
                 return render_template('auth/login.html')
 
             usuario = buscar_usuario_por_auth(auth_user_id)
             if not usuario:
-                flash("Usuário não encontrado. Contate o administrador.", "error")
+                flash("Email ou senha inválidos.", "error")
                 return render_template('auth/login.html')
 
             if not usuario.get("ativo"):
@@ -60,10 +71,10 @@ def login():
 
             session["user"] = usuario
             session["access_token"] = access_token
-            session.permanent = False
+            session.permanent = True
 
             next_url = request.args.get('next')
-            if next_url:
+            if next_url and is_safe_url(next_url):
                 return redirect(next_url)
             return redirect(url_for('admin.dashboard'))
 
@@ -97,6 +108,10 @@ def register():
             flash("Preencha todos os campos.", "warning")
             return render_template('auth/register.html')
 
+        if len(admin_password) < 8:
+            flash("A senha deve ter no mínimo 8 caracteres.", "warning")
+            return render_template('auth/register.html')
+
         try:
             client = get_supabase_client()
 
@@ -115,7 +130,7 @@ def register():
 
             if auth_resp.status_code not in (200, 201, 204):
                 client.table("tenants").delete().eq("id", tenant_id).execute()
-                flash(f"Erro ao criar usuário de autenticação: {auth_resp.text}", "error")
+                flash(f"Erro ao criar usuário de autenticação.", "error")
                 return render_template('auth/register.html')
 
             auth_user_id = auth_resp.json()["user"]["id"]
@@ -132,7 +147,7 @@ def register():
             return redirect(url_for('admin.dashboard'))
 
         except Exception as e:
-            flash(f"Erro: {e}", "error")
+            flash(f"Erro ao criar tenant.", "error")
             return render_template('auth/register.html')
 
     return render_template('auth/register.html')
@@ -158,6 +173,10 @@ def gerenciar_usuarios():
             flash("Preencha todos os campos.", "warning")
             return redirect(url_for('auth.gerenciar_usuarios', tenant_id=tenant_id))
 
+        if len(password) < 8:
+            flash("A senha deve ter no mínimo 8 caracteres.", "warning")
+            return redirect(url_for('auth.gerenciar_usuarios', tenant_id=tenant_id))
+
         try:
             auth_resp = requests.post(
                 f"{SUPABASE_URL}/auth/v1/signup",
@@ -166,7 +185,7 @@ def gerenciar_usuarios():
             )
 
             if auth_resp.status_code not in (200, 201, 204):
-                flash(f"Erro ao criar usuário: {auth_resp.text}", "error")
+                flash(f"Erro ao criar usuário.", "error")
                 return redirect(url_for('auth.gerenciar_usuarios', tenant_id=tenant_id))
 
             auth_user_id = auth_resp.json()["user"]["id"]
@@ -181,7 +200,7 @@ def gerenciar_usuarios():
 
             flash(f"Usuário '{nome}' criado como {papel}!", "success")
         except Exception as e:
-            flash(f"Erro: {e}", "error")
+            flash(f"Erro ao criar usuário.", "error")
 
         return redirect(url_for('auth.gerenciar_usuarios', tenant_id=tenant_id))
 

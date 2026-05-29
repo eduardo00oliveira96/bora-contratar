@@ -1,5 +1,12 @@
 from database.conexao_supabase import get_supabase_client, get_tenant_id
 
+
+def _sanitizar(valor):
+    if isinstance(valor, str):
+        return valor.replace("\u0000", "").strip()
+    return valor
+
+
 def create_candidatura(data):
     tenant_id = get_tenant_id()
     if not tenant_id:
@@ -9,7 +16,7 @@ def create_candidatura(data):
         "tenant_id": tenant_id,
         "vaga_id": data.get("vaga_id"),
         "candidato_id": data.get("candidato_id"),
-        "resumo": data.get("resumo", ""),
+        "resumo": _sanitizar(data.get("resumo", "")),
         "link_curriculo": data.get("link_curriculo", ""),
     }
     result = client.table("candidaturas").insert(payload).execute()
@@ -61,12 +68,47 @@ def get_candidatura_by_id(candidatura_id):
         return row
     return None
 
+def selecionar_candidato(candidatura_id):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return
+    client = get_supabase_client()
+    client.table("candidaturas").update({"status": "Selecionado", "updated_at": "now()"}).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
+
 def update_candidatura_status(candidatura_id, status):
     tenant_id = get_tenant_id()
     if not tenant_id:
         return
     client = get_supabase_client()
     client.table("candidaturas").update({"status": status, "updated_at": "now()"}).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
+
+
+def contratar_candidato(candidatura_id, vaga_id):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return False
+    client = get_supabase_client()
+    candidatura = client.table("candidaturas").select("status, nome").eq("id", candidatura_id).eq("tenant_id", tenant_id).limit(1).execute()
+    if not candidatura.data or candidatura.data[0]["status"] != "Aprovado_Entrevistas":
+        return False
+    client.table("candidaturas").update({"status": "Contratado", "updated_at": "now()"}).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
+    client.table("vagas").update({
+        "status_vaga": "concluida",
+        "candidatura_contratada_id": candidatura_id,
+        "data_conclusao": "now()",
+        "ativo": False,
+        "updated_at": "now()",
+    }).eq("id", vaga_id).eq("tenant_id", tenant_id).execute()
+    from models.notificacao import notificar_candidato_contratado
+    from models.vaga import get_vaga_by_id
+    vaga = get_vaga_by_id(vaga_id)
+    if vaga:
+        notificar_candidato_contratado(
+            {"id": vaga_id, "titulo": vaga.get("titulo", "")},
+            candidatura.data[0].get("nome", ""),
+            candidatura_id
+        )
+    return True
 
 def get_candidatura_by_cpf(cpf, vaga_id=None):
     tenant_id = get_tenant_id()
@@ -103,7 +145,7 @@ def update_candidatura_info(candidatura_id, data):
     client = get_supabase_client()
     payload = {
         "link_curriculo": data.get("link_curriculo", ""),
-        "resumo": data.get("resumo", ""),
+        "resumo": _sanitizar(data.get("resumo", "")),
         "updated_at": "now()",
     }
     client.table("candidaturas").update(payload).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
@@ -119,6 +161,35 @@ def update_candidatura_info(candidatura_id, data):
             cand_payload["email"] = data["email"]
         if cand_payload:
             client.table("candidatos").update(cand_payload).eq("id", candidato_id).eq("tenant_id", tenant_id).execute()
+
+def update_candidatura_erro(candidatura_id, mensagem_erro=""):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return
+    client = get_supabase_client()
+    payload = {
+        "status": "Erro na Avaliação",
+        "analise_detalhada": mensagem_erro or "Falha na avaliação por IA.",
+        "updated_at": "now()",
+    }
+    client.table("candidaturas").update(payload).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
+
+def reset_candidatura_ai_eval(candidatura_id):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return
+    client = get_supabase_client()
+    payload = {
+        "status": "Pendente",
+        "nota": None,
+        "analise_detalhada": None,
+        "pontos_fortes": None,
+        "gaps_atencao": None,
+        "recomendacao": None,
+        "tags": None,
+        "updated_at": "now()",
+    }
+    client.table("candidaturas").update(payload).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
 
 def get_all_candidaturas():
     tenant_id = get_tenant_id()
@@ -137,6 +208,20 @@ def get_all_candidaturas():
     return data
 
 
+def mover_banco_talentos(candidatura_id):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return
+    client = get_supabase_client()
+    client.table("candidaturas").update({"status": "Banco_Talentos", "updated_at": "now()"}).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
+
+def update_observacoes_rh(candidatura_id, texto):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return
+    client = get_supabase_client()
+    client.table("candidaturas").update({"observacoes_rh": texto, "updated_at": "now()"}).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
+
 def get_all_candidaturas_with_vaga():
     tenant_id = get_tenant_id()
     if not tenant_id:
@@ -154,3 +239,77 @@ def get_all_candidaturas_with_vaga():
         row["email_candidato"] = cand.get("email", "")
         row["titulo_vaga"] = vg.get("titulo", "—")
     return data
+
+
+def get_banco_talentos():
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return []
+    client = get_supabase_client()
+    # Busca candidaturas cujo status é 'Banco_Talentos'
+    result = client.table("candidaturas").select("*, candidatos!candidaturas_candidato_id_fkey(*), vagas!candidaturas_vaga_id_fkey(titulo)").eq("tenant_id", tenant_id).eq("status", "Banco_Talentos").order("updated_at", desc=True).execute()
+
+    data = result.data if result.data else []
+    for row in data:
+        cand = row.pop("candidatos", {}) or {}
+        vg = row.pop("vagas", {}) or {}
+        row["nome"] = cand.get("nome", "")
+        row["cpf"] = cand.get("cpf", "")
+        row["telefone"] = cand.get("telefone", "")
+        row["email_candidato"] = cand.get("email", "")
+        row["titulo_vaga"] = vg.get("titulo", "—")
+        
+        # Faz parse das tags que vêm como string "['Python', 'Django']" do Supabase
+        tags_str = row.get("tags")
+        if tags_str:
+            try:
+                import ast
+                parsed = ast.literal_eval(tags_str)
+                if isinstance(parsed, list):
+                    row["tags_lista"] = parsed
+                else:
+                    row["tags_lista"] = [str(parsed)]
+            except Exception:
+                row["tags_lista"] = [t.strip() for t in tags_str.replace("[","").replace("]","").replace("'","").replace("\"","").split(",") if t.strip()]
+        else:
+            row["tags_lista"] = []
+    return data
+
+
+def vincular_candidato_a_vaga(candidatura_id, nova_vaga_id):
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return None
+    client = get_supabase_client()
+
+    # Busca a candidatura de origem no banco de talentos
+    old_cand = get_candidatura_by_id(candidatura_id)
+    if not old_cand:
+        return None
+
+    # Evita duplicidade de candidatura para o mesmo candidato na mesma vaga
+    existing = client.table("candidaturas").select("id").eq("tenant_id", tenant_id).eq("vaga_id", nova_vaga_id).eq("candidato_id", old_cand.get("candidato_id")).limit(1).execute()
+    if existing.data:
+        return existing.data[0]["id"]
+
+    # Cria nova candidatura herdando toda a análise de IA prévia
+    payload = {
+        "tenant_id": tenant_id,
+        "vaga_id": nova_vaga_id,
+        "candidato_id": old_cand.get("candidato_id"),
+        "resumo": old_cand.get("resumo", ""),
+        "link_curriculo": old_cand.get("link_curriculo", ""),
+        "status": "Avaliado",
+        "nota": old_cand.get("nota"),
+        "analise_detalhada": old_cand.get("analise_detalhada"),
+        "pontos_fortes": old_cand.get("pontos_fortes"),
+        "gaps_atencao": old_cand.get("gaps_atencao"),
+        "recomendacao": old_cand.get("recomendacao"),
+        "tags": old_cand.get("tags"),
+        "etapa_entrevista": "Pré Análise com IA",
+    }
+
+    result = client.table("candidaturas").insert(payload).execute()
+    if result.data:
+        return result.data[0]["id"]
+    return None

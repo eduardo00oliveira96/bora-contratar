@@ -8,6 +8,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 _supabase: Client = None
+_tenant_id_cache = None
 
 def get_supabase_client() -> Client:
     global _supabase
@@ -18,10 +19,18 @@ def get_supabase_client() -> Client:
 TENANT_SLUG_PADRAO = "bora-contratar"
 
 def get_tenant_id() -> str:
+    global _tenant_id_cache
+    if _tenant_id_cache is not None:
+        return _tenant_id_cache
+
     client = get_supabase_client()
-    result = client.table("tenants").select("id").eq("slug", TENANT_SLUG_PADRAO).limit(1).execute()
-    if result.data:
-        return result.data[0]["id"]
+    try:
+        result = client.table("tenants").select("id").eq("slug", TENANT_SLUG_PADRAO).limit(1).execute()
+        if result.data:
+            _tenant_id_cache = result.data[0]["id"]
+            return _tenant_id_cache
+    except Exception as e:
+        print(f"Erro ao buscar tenant_id no Supabase: {e}")
     return None
 
 def supabase_select(table: str, columns: str = "*", filters: dict = None, order_by: str = None, ascending: bool = False):

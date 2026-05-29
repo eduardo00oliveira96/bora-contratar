@@ -1,8 +1,7 @@
 import sys
-import json
-from pathlib import Path
+import logging
 import os
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from typing import List, Literal
 from dotenv import load_dotenv
 from agno.agent import Agent
@@ -14,9 +13,11 @@ if BASE_DIR not in sys.path:
 
 from services.obter_dados_vaga import obter_dados_vaga
 from ai.prompt_avaliar_cv import prompt_avaliar_cv
-from models.candidatura import update_candidatura_ai_eval
+from models.candidatura import update_candidatura_ai_eval, update_candidatura_erro
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 class AvaliacaoCV(BaseModel):
@@ -28,8 +29,12 @@ class AvaliacaoCV(BaseModel):
     tags_extraidas: List[str] = Field(default_factory=list, max_length=30)
 
 
-def avaliar_cv(texto_cv: str, dados_vaga: dict, candidatura_id: int) -> AvaliacaoCV:
-    resposta = None
+def avaliar_cv(texto_cv: str, dados_vaga: dict, candidatura_id: int) -> bool:
+    if not texto_cv or not texto_cv.strip():
+        logger.warning(f"Texto do CV vazio para candidatura {candidatura_id}")
+        update_candidatura_erro(candidatura_id, "CV sem texto extraído para avaliação.")
+        return False
+
     try:
         agente_recrutamento = Agent(
             name="Agente de Recrutamento",
@@ -48,32 +53,37 @@ def avaliar_cv(texto_cv: str, dados_vaga: dict, candidatura_id: int) -> Avaliaca
         """
 
         processamento = agente_recrutamento.run(input=mensagem_usuario)
-        resposta: AvaliacaoCV = processamento.content
-        return resposta
+        resposta = processamento.content
 
+        if not isinstance(resposta, AvaliacaoCV):
+            raise ValueError(f"Resposta inesperada da IA: {type(resposta).__name__}")
+
+        update_candidatura_ai_eval(
+            candidatura_id,
+            resposta.nota,
+            resposta.analise_detalhada,
+            str(resposta.pontos_fortes),
+            str(resposta.gaps_atencao),
+            resposta.recomendacao,
+            str(resposta.tags_extraidas)
+        )
+        logger.info(f"Candidatura {candidatura_id} avaliada: nota {resposta.nota}, recomendação {resposta.recomendacao}")
+        return True
+
+    except ValidationError as e:
+        erro = f"Resposta da IA não seguiu o schema esperado: {e}"
+        logger.error(f"Erro de validação na candidatura {candidatura_id}: {e}")
+        update_candidatura_erro(candidatura_id, erro)
+        return False
     except Exception as e:
-        print("Erro ao avaliar CV:", e)
-        return None
-
-    finally:
-        if resposta:
-            try:
-                update_candidatura_ai_eval(
-                    candidatura_id,
-                    resposta.nota,
-                    resposta.analise_detalhada,
-                    str(resposta.pontos_fortes),
-                    str(resposta.gaps_atencao),
-                    resposta.recomendacao,
-                    str(resposta.tags_extraidas)
-                )
-            except Exception as db_err:
-                print(f"Erro ao atualizar banco: {db_err}")
+        erro = f"Erro ao avaliar CV: {e}"
+        logger.error(f"Erro na avaliação da candidatura {candidatura_id}: {e}", exc_info=True)
+        update_candidatura_erro(candidatura_id, erro)
+        return False
 
 
 if __name__ == "__main__":
     texto_cv = "..."  # (example CV omitted for brevity)
     dados_vaga = obter_dados_vaga(1)
-    resultado = avaliar_cv(texto_cv, dados_vaga, candidatura_id="some-uuid")
-    if resultado:
-        print(resultado.nota)
+    sucesso = avaliar_cv(texto_cv, dados_vaga, candidatura_id="some-uuid")
+    print(f"Avaliação concluída: {sucesso}")

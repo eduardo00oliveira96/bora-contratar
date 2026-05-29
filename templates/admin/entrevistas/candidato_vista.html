@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}{{ candidato.nome }} | Bora Contratar{% endblock %}
+
+{% block layout %}
+<div class="max-w-4xl mx-auto px-4 py-6 space-y-5">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-extrabold text-slate-900 dark:text-white">{{ candidato.nome }}</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400">{{ vaga.titulo if vaga else candidato.titulo_vaga }}</p>
+    </div>
+    <span class="px-3 py-1.5 text-sm font-bold rounded-lg whitespace-nowrap self-start
+      {% if candidato.status == 'Em_Entrevistas' %}bg-pink-100 dark:bg-pink-900/60 text-pink-800 dark:text-pink-300 border border-pink-200 dark:border-pink-800
+      {% elif candidato.status == 'Aprovado_Entrevistas' %}bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800
+      {% elif candidato.status == 'Reprovado' %}bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800
+      {% elif candidato.status == 'Banco_Talentos' %}bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800
+      {% elif candidato.status == 'Contratado' %}bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800
+      {% else %}bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400{% endif %}">
+      {{ {'Em_Entrevistas':'Em Entrevistas','Aprovado_Entrevistas':'Aprovado','Banco_Talentos':'Banco de Talentos'}.get(candidato.status, candidato.status) }}
+    </span>
+  </div>
+
+  <!-- Candidate Info -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 transition-colors">
+    <div class="flex items-start justify-between">
+      <div class="space-y-1.5">
+        <p class="text-sm text-slate-600 dark:text-slate-400"><i class="fa-regular fa-envelope mr-2 w-4 text-center"></i> {{ candidato.email or '—' }}</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400"><i class="fa-regular fa-phone mr-2 w-4 text-center"></i> {{ candidato.telefone or '—' }}</p>
+        {% if candidato.cpf %}
+        <p class="text-sm text-slate-600 dark:text-slate-400"><i class="fa-regular fa-id-card mr-2 w-4 text-center"></i> {{ candidato.cpf }}</p>
+        {% endif %}
+        {% if candidato.resumo %}
+        <p class="text-sm text-slate-600 dark:text-slate-400 mt-2"><i class="fa-regular fa-file-lines mr-2 w-4 text-center"></i> {{ candidato.resumo[:200] }}{% if candidato.resumo|length > 200 %}...{% endif %}</p>
+        {% endif %}
+      </div>
+      <div class="text-center shrink-0 ml-4">
+        {% if candidato.nota %}
+        <div class="w-16 h-16 rounded-full flex items-center justify-center border-[3px] mx-auto mb-1
+          {% if candidato.nota >= 70 %}border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30
+          {% elif candidato.nota < 50 %}border-red-500 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30
+          {% else %}border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30{% endif %}">
+          <span class="text-lg font-black">{{ candidato.nota }}</span>
+        </div>
+        <p class="text-[10px] text-slate-400 uppercase tracking-wider">Score IA</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="flex gap-3 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
+      {% if candidato.link_curriculo %}
+      <a href="{{ url_for('entrevista.candidato_curriculo', id=candidato.id) }}" target="_blank"
+         class="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-1">
+        <i class="fa-solid fa-file"></i> Currículo
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Vaga Details -->
+  {% if vaga %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-sky-200 dark:border-sky-800 border-l-4 border-l-sky-400 p-5 transition-colors">
+    <h2 class="text-base font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+      <i class="fa-solid fa-briefcase text-sky-500"></i> Detalhes da Vaga
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+      {% if vaga.descricao %}
+      <div class="sm:col-span-2">
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Descrição</span>
+        <p class="text-slate-700 dark:text-slate-300 mt-0.5">{{ vaga.descricao }}</p>
+      </div>
+      {% endif %}
+      {% if vaga.requisitos %}
+      <div>
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Requisitos</span>
+        <p class="text-slate-700 dark:text-slate-300 mt-0.5 whitespace-pre-line">{{ vaga.requisitos }}</p>
+      </div>
+      {% endif %}
+      {% if vaga.habilidades %}
+      <div>
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Habilidades</span>
+        <p class="text-slate-700 dark:text-slate-300 mt-0.5 whitespace-pre-line">{{ vaga.habilidades }}</p>
+      </div>
+      {% endif %}
+      {% if vaga.local_trabalho %}
+      <div>
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Local</span>
+        <p class="text-slate-700 dark:text-slate-300 mt-0.5">{{ vaga.local_trabalho }}</p>
+      </div>
+      {% endif %}
+      {% if vaga.contrato_trabalho %}
+      <div>
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contrato</span>
+        <p class="text-slate-700 dark:text-slate-300 mt-0.5">{{ vaga.contrato_trabalho }}</p>
+      </div>
+      {% endif %}
+      {% if vaga.salario %}
+      <div>
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Salário</span>
+        <p class="text-slate-700 dark:text-slate-300 mt-0.5">R$ {{ "%.2f"|format(vaga.salario) if vaga.salario is number else vaga.salario }}</p>
+      </div>
+      {% endif %}
+      {% if vaga.beneficios %}
+      <div>
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Benefícios</span>
+        <p class="text-slate-700 dark:text-slate-300 mt-0.5">{{ vaga.beneficios }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- AI Analysis -->
+  {% if fortes or gaps or candidato.analise_detalhada or candidato.recomendacao %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-violet-200 dark:border-violet-800 border-l-4 border-l-violet-400 p-5 transition-colors">
+    <h2 class="text-base font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+      <i class="fa-solid fa-brain text-violet-500"></i> Análise do Currículo pela IA
+    </h2>
+
+    {% if candidato.analise_detalhada %}
+    <div class="mb-4">
+      <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Análise Geral</p>
+      <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">{{ candidato.analise_detalhada }}</div>
+    </div>
+    {% endif %}
+
+    {% if fortes or gaps %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {% if fortes %}
+      <div>
+        <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+          <i class="fa-solid fa-thumbs-up"></i> Pontos Fortes
+        </p>
+        <ul class="space-y-1">
+          {% for f in fortes %}
+          <li class="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1.5">
+            <span class="text-emerald-500 mt-0.5">•</span> {{ f }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if gaps %}
+      <div>
+        <p class="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+          <i class="fa-solid fa-lightbulb"></i> Pontos de Atenção
+        </p>
+        <ul class="space-y-1">
+          {% for g in gaps %}
+          <li class="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1.5">
+            <span class="text-amber-500 mt-0.5">•</span> {{ g }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if candidato.recomendacao %}
+    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+      <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Recomendação da IA</p>
+      <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{{ candidato.recomendacao }}</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

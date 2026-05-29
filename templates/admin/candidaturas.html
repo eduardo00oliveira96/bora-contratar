@@ -26,6 +26,9 @@
     <option value="Avaliado">Avaliado</option>
     <option value="Pendente">Pendente</option>
     <option value="Em Andamento">Em Andamento</option>
+    <option value="Em_Entrevistas">Em Entrevistas</option>
+    <option value="Aprovado_Entrevistas">Aprovado nas Entrevistas</option>
+    <option value="Contratado">Contratado</option>
     <option value="Aprovado">Aprovado</option>
     <option value="Reprovado">Reprovado</option>
     <option value="Contratado">Contratado</option>
@@ -83,7 +86,9 @@
               {% if status == 'Avaliado' %}bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300
               {% elif status == 'Aprovado' %}bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300
               {% elif status == 'Reprovado' %}bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300
-              {% elif status == 'Contratado' %}bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300
+              {% elif status == 'Contratado' %}bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300
+              {% elif status == 'Em_Entrevistas' %}bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300
+              {% elif status == 'Aprovado_Entrevistas' %}bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300
               {% elif status == 'Em Andamento' %}bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300
               {% else %}bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400{% endif %}">
               {{ status }}
@@ -163,10 +168,16 @@ function exportCSV() {
     return;
   }
 
+  function sanitizeCSV(val) {
+    val = String(val).replace(/"/g, '""');
+    if (/^[=+\-@]/.test(val)) val = "'" + val;
+    return '"' + val + '"';
+  }
+
   var csv = '\uFEFF';
   csv += 'Nome;Vaga;Score;Status;Data;Email\n';
   rows.forEach(function(r) {
-    csv += '"' + r.nome.replace(/"/g, '""') + '";"' + r.vaga.replace(/"/g, '""') + '";"' + r.score + '";"' + r.status + '";"' + r.data + '";"' + r.email + '"\n';
+    csv += sanitizeCSV(r.nome) + ';' + sanitizeCSV(r.vaga) + ';' + sanitizeCSV(r.score) + ';' + sanitizeCSV(r.status) + ';' + sanitizeCSV(r.data) + ';' + sanitizeCSV(r.email) + '\n';
   });
 
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

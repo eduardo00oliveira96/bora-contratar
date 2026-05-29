@@ -1,0 +1,60 @@
+{% extends "admin_base.html" %}
+{% block title %}Benefícios | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <a href="{{ url_for('admin.fichas_listar') }}"
+            class="text-brand-600 hover:text-brand-700 font-medium flex items-center mb-2">
+            <i class="fa-solid fa-arrow-left mr-2"></i> Voltar para Fichas Técnicas
+        </a>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Catálogo de Benefícios</h1>
+        <p class="text-slate-500 dark:text-slate-400 text-sm">Gerencie os benefícios disponíveis para as fichas técnicas.</p>
+    </div>
+    <a href="{{ url_for('admin.beneficios_novo') }}"
+        class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+        <i class="fa-solid fa-plus"></i> Novo Benefício
+    </a>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-800/50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Nome</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                {% for b in beneficios %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ b.nome }}</p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="{{ url_for('admin.beneficios_editar', id=b.id) }}"
+                            class="text-brand-600 hover:text-brand-900 dark:text-brand-400 mr-3 transition-colors">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        <form action="{{ url_for('admin.beneficios_excluir', id=b.id) }}" method="POST" class="inline"
+                            onsubmit="return confirm('Excluir este benefício? Ele será removido de todas as fichas técnicas que o utilizam.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="text-slate-400 hover:text-red-500 transition-colors">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="px-6 py-10 text-center text-slate-500 dark:text-slate-400">
+                        Nenhum benefício cadastrado. <a href="{{ url_for('admin.beneficios_novo') }}" class="text-brand-600 hover:text-brand-700 font-medium">Crie o primeiro!</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

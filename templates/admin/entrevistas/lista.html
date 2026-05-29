@@ -1,0 +1,49 @@
+{% extends "admin_base.html" %}
+{% block title %}Entrevistas | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Pipeline de Entrevistas</h1>
+  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Vagas com entrevistas em andamento</p>
+</div>
+
+{% if vagas %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  {% for v in vagas %}
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 transition-colors hover:shadow-md hover:border-brand-300 dark:hover:border-brand-700 {% if v.tem_selecionados and v.status_vaga != 'em_entrevistas' %}border-sky-300 dark:border-sky-700{% endif %}">
+    <div class="flex items-start justify-between mb-3">
+      <h3 class="font-bold text-slate-900 dark:text-white text-base leading-tight">{{ v.titulo }}</h3>
+      {% if v.tem_selecionados and v.status_vaga != 'em_entrevistas' %}
+      <span class="shrink-0 ml-2 px-2.5 py-1 text-xs font-bold rounded-md bg-sky-100 dark:bg-sky-900/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+        Selecionados
+      </span>
+      {% else %}
+      <span class="shrink-0 ml-2 px-2.5 py-1 text-xs font-bold rounded-md bg-pink-100 dark:bg-pink-900/60 text-pink-800 dark:text-pink-300 border border-pink-200 dark:border-pink-800">
+        Em Entrevistas
+      </span>
+      {% endif %}
+    </div>
+    <div class="text-xs text-slate-500 dark:text-slate-400 space-y-1 mb-4">
+      <p><i class="fa-solid fa-layer-group mr-1.5 w-4 text-center"></i> {{ v.etapas }} etapa{{ 's' if v.etapas != 1 }}</p>
+      {% if v.candidatos_entrevista %}
+      <p><i class="fa-solid fa-users mr-1.5 w-4 text-center"></i> {{ v.candidatos_entrevista }} candidato{{ 's' if v.candidatos_entrevista != 1 }} em entrevista</p>
+      {% endif %}
+      <p><i class="fa-solid fa-check-double mr-1.5 w-4 text-center text-sky-500"></i> {{ v.candidatos_selecionados }} selecionado{{ 's' if v.candidatos_selecionados != 1 }}</p>
+    </div>
+    <a href="{{ url_for('entrevista.pipeline', id=v.id) }}"
+       class="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white {% if v.tem_selecionados and v.status_vaga != 'em_entrevistas' %}bg-sky-600 hover:bg-sky-700{% else %}bg-pink-600 hover:bg-pink-700{% endif %} focus:outline-none transition-colors">
+      <i class="fa-solid fa-people-arrows mr-2"></i> Acessar Pipeline
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center transition-colors">
+  <i class="fa-solid fa-people-arrows text-5xl text-slate-300 dark:text-slate-600 mb-4"></i>
+  <h3 class="text-xl font-medium text-slate-900 dark:text-white mb-2">Nenhuma vaga em entrevistas</h3>
+  <p class="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+    Vagas com candidatos em entrevistas ou selecionados aparecerão aqui.
+  </p>
+</div>
+{% endif %}
+{% endblock %}
