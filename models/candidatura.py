@@ -99,15 +99,21 @@ def contratar_candidato(candidatura_id, vaga_id):
         "ativo": False,
         "updated_at": "now()",
     }).eq("id", vaga_id).eq("tenant_id", tenant_id).execute()
-    from models.notificacao import notificar_candidato_contratado
-    from models.vaga import get_vaga_by_id
-    vaga = get_vaga_by_id(vaga_id)
-    if vaga:
-        notificar_candidato_contratado(
-            {"id": vaga_id, "titulo": vaga.get("titulo", "")},
-            candidatura.data[0].get("nome", ""),
-            candidatura_id
-        )
+    # BUG 2 FIX: Notificacao SMTP isolada ? falhas de e-mail nunca revertem a contratacao.
+    import logging as _lg
+    _log = _lg.getLogger(__name__)
+    try:
+        from models.notificacao import notificar_candidato_contratado
+        from models.vaga import get_vaga_by_id
+        vaga = get_vaga_by_id(vaga_id)
+        if vaga:
+            notificar_candidato_contratado(
+                {"id": vaga_id, "titulo": vaga.get("titulo", "")},
+                candidatura.data[0].get("nome", ""),
+                candidatura_id
+            )
+    except Exception as _smtp_err:
+        _log.error(f"Falha ao notificar contratacao {candidatura_id}: {_smtp_err}", exc_info=True)
     return True
 
 def get_candidatura_by_cpf(cpf, vaga_id=None):
@@ -313,3 +319,37 @@ def vincular_candidato_a_vaga(candidatura_id, nova_vaga_id):
     if result.data:
         return result.data[0]["id"]
     return None
+
+
+def get_candidaturas_pendentes_reprocessar(horas=2):
+    """
+    Bug 3 Fix: Detecta candidaturas travadas em status Pendente com curriculo extraido,
+    sintoma de threads de IA mortas silenciosamente apos reinicio do servidor.
+    O admin pode usar esta funcao para reprocessar em lote via painel.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        return []
+    client = get_supabase_client()
+    try:
+        result = client.table("candidaturas") \
+            .select("*, candidatos!candidaturas_candidato_id_fkey(nome, email), vagas!candidaturas_vaga_id_fkey(titulo)") \
+            .eq("tenant_id", tenant_id) \
+            .eq("status", "Pendente") \
+            .not_.is_("resumo", "null") \
+            .lt("created_at", f"now() - interval '{horas} hours'") \
+            .order("created_at", desc=False) \
+            .execute()
+        data = result.data if result.data else []
+        for row in data:
+            cand = row.pop("candidatos", {}) or {}
+            vg = row.pop("vagas", {}) or {}
+            row["nome"] = cand.get("nome", "")
+            row["email_candidato"] = cand.get("email", "")
+            row["titulo_vaga"] = vg.get("titulo", "?")
+        return data
+    except Exception as e:
+        logger.error(f"Erro ao buscar candidaturas pendentes: {e}", exc_info=True)
+        return []

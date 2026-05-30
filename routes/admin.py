@@ -506,3 +506,49 @@ def banco_talentos_vincular():
     else:
         flash("O candidato já está inscrito ou ocorreu um erro ao vincular a esta vaga.", "error")
         return redirect(url_for('admin.banco_talentos'))
+
+
+@admin_bp.route('/candidaturas-travadas')
+@login_required
+def candidaturas_travadas():
+    """
+    Bug 3 Fix: Painel para detectar e reprocessar candidaturas
+    que ficaram travadas em status Pendente (threads de IA mortas).
+    """
+    from models.candidatura import get_candidaturas_pendentes_reprocessar
+    travadas = get_candidaturas_pendentes_reprocessar(horas=2)
+    return render_template('admin/candidaturas_travadas.html', travadas=travadas)
+
+
+@admin_bp.route('/reprocessar-candidatura/<candidatura_id>', methods=['POST'])
+@login_required
+def reprocessar_candidatura(candidatura_id):
+    """
+    Bug 3 Fix: Re-dispara o processamento de IA para uma candidatura travada.
+    Reinicia o thread de analise de curriculo sem criar duplicatas.
+    """
+    import logging
+    import threading
+    from models.candidatura import get_candidatura_by_id
+    from services.analisar_curriculo import analisar_curriculo_async
+    logger = logging.getLogger(__name__)
+    cand = get_candidatura_by_id(candidatura_id)
+    if not cand:
+        flash('Candidatura nao encontrada.', 'danger')
+        return redirect(url_for('admin.candidaturas_travadas'))
+    if cand.get('status') != 'Pendente':
+        flash('Candidatura nao esta mais em status Pendente.', 'warning')
+        return redirect(url_for('admin.candidaturas_travadas'))
+    try:
+        t = threading.Thread(
+            target=analisar_curriculo_async,
+            args=(candidatura_id,),
+            daemon=True
+        )
+        t.start()
+        logger.info(f'Reprocessamento iniciado para candidatura {candidatura_id}')
+        flash('Reprocessamento iniciado com sucesso.', 'success')
+    except Exception as e:
+        logger.error(f'Erro ao reprocessar candidatura {candidatura_id}: {e}', exc_info=True)
+        flash(f'Erro ao iniciar reprocessamento: {e}', 'danger')
+    return redirect(url_for('admin.candidaturas_travadas'))

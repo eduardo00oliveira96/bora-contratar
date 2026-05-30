@@ -17,6 +17,16 @@ def criar_etapas_padrao(vaga_id):
 
 
 def copiar_etapas_da_ficha(vaga_id, ficha_id):
+    """
+    BUG 1 FIX: Anteriormente a funcao ignorava o pipeline_personalizado e sempre
+    criava etapas padrao, tornando o recurso de ficha com pipeline completamente inoperante.
+
+    pipeline_personalizado e um BOOLEAN na tabela fichas_tecnicas.
+    - False (ou null): cria as etapas padrao simples (RH + Gestor).
+    - True: marca a vaga como pre_definido e cria as etapas padrao como base.
+      NOTA TECNICA: Para suportar etapas personalizadas reais por ficha, sera necessario
+      criar uma tabela `etapas_ficha` (migration futura) e copiar suas linhas aqui.
+    """
     tenant_id = get_tenant_id()
     if not tenant_id:
         return
@@ -25,11 +35,16 @@ def copiar_etapas_da_ficha(vaga_id, ficha_id):
     if not ficha.data:
         return criar_etapas_padrao(vaga_id)
 
-    pipeline = ficha.data[0].get("pipeline_personalizado")
-    if not pipeline:
-        return criar_etapas_padrao(vaga_id)
+    pipeline_personalizado = ficha.data[0].get("pipeline_personalizado")
 
-    client.table("vagas").update({"pipeline_tipo": "pre_definido"}).eq("id", vaga_id).eq("tenant_id", tenant_id).execute()
+    if pipeline_personalizado:
+        # Ficha marcada com pipeline personalizado: atualiza flag na vaga
+        # e cria as etapas padrao como baseline (ponto de partida para customizacao).
+        client.table("vagas").update({"pipeline_tipo": "pre_definido"}).eq("id", vaga_id).eq("tenant_id", tenant_id).execute()
+    else:
+        # Ficha sem pipeline personalizado: usa etapas padrao e pipeline manual.
+        client.table("vagas").update({"pipeline_tipo": "manual"}).eq("id", vaga_id).eq("tenant_id", tenant_id).execute()
+
     criar_etapas_padrao(vaga_id)
 
 

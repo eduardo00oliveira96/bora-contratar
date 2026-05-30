@@ -1,0 +1,58 @@
+﻿{% extends "admin_base.html" %}
+{% block title %}Candidaturas Travadas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">⚠️ Candidaturas Travadas</h1>
+    <p class="page-subtitle">Candidaturas em status <strong>Pendente</strong> com currículo extraído há mais de 2h — sintoma de thread de IA encerrada pelo servidor.</p>
+  </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+  <div class="card-body">
+    {% if not travadas %}
+      <div style="text-align:center;padding:3rem 1rem;color:var(--text-secondary);">
+        <div style="font-size:3rem;margin-bottom:1rem;">✅</div>
+        <h3 style="margin:0 0 .5rem;color:var(--text-primary);">Nenhuma candidatura travada</h3>
+        <p style="margin:0;">Todas as análises de IA estão processando normalmente.</p>
+      </div>
+    {% else %}
+      <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem;color:#b45309;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span><strong>{{ travadas|length }} candidatura(s)</strong> precisam ser reprocessadas. Clique em <em>Reprocessar</em> para reiniciar a análise de IA individualmente.</span>
+      </div>
+
+      <table class="table" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border-color);text-align:left;">
+            <th style="padding:.75rem 1rem;font-size:.75rem;text-transform:uppercase;color:var(--text-secondary);font-weight:600;">Candidato</th>
+            <th style="padding:.75rem 1rem;font-size:.75rem;text-transform:uppercase;color:var(--text-secondary);font-weight:600;">Vaga</th>
+            <th style="padding:.75rem 1rem;font-size:.75rem;text-transform:uppercase;color:var(--text-secondary);font-weight:600;">Enviado em</th>
+            <th style="padding:.75rem 1rem;font-size:.75rem;text-transform:uppercase;color:var(--text-secondary);font-weight:600;text-align:center;">Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in travadas %}
+          <tr style="border-bottom:1px solid var(--border-color);transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
+            <td style="padding:.85rem 1rem;">
+              <div style="font-weight:500;color:var(--text-primary);">{{ c.nome or '—' }}</div>
+              <div style="font-size:.8rem;color:var(--text-secondary);">{{ c.email_candidato or '' }}</div>
+            </td>
+            <td style="padding:.85rem 1rem;color:var(--text-primary);">{{ c.titulo_vaga or '—' }}</td>
+            <td style="padding:.85rem 1rem;color:var(--text-secondary);font-size:.85rem;">{{ c.created_at[:16].replace('T', ' ') if c.created_at else '—' }}</td>
+            <td style="padding:.85rem 1rem;text-align:center;">
+              <form method="POST" action="{{ url_for('admin.reprocessar_candidatura', candidatura_id=c.id) }}" onsubmit="return confirm('Reprocessar análise de IA para {{ c.nome }}?')">
+                <button type="submit" class="btn btn-warning btn-sm" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:#b45309;padding:.4rem .9rem;border-radius:.5rem;font-size:.8rem;cursor:pointer;font-weight:500;transition:all .2s;" onmouseover="this.style.background='rgba(245,158,11,.25)'" onmouseout="this.style.background='rgba(245,158,11,.15)'">
+                  🔄 Reprocessar
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

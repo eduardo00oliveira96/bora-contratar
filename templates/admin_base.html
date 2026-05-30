@@ -2,6 +2,57 @@
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  /* Sidebar collapsed state — desktop only */
+  @media (min-width: 768px) {
+    #sidebar.collapsed { width: 4rem; }
+    #sidebar.collapsed .sidebar-label,
+    #sidebar.collapsed .sidebar-section-title,
+    #sidebar.collapsed .sidebar-badge,
+    #sidebar.collapsed .sidebar-user-info,
+    #sidebar.collapsed .sidebar-user-name,
+    #sidebar.collapsed .sidebar-user-role { display: none; }
+    #sidebar.collapsed .sidebar-item { justify-content: center; padding-left: 0; padding-right: 0; }
+    #sidebar.collapsed .sidebar-item i { margin-right: 0; }
+    #sidebar.collapsed .sidebar-logo-text { display: none; }
+    #sidebar.collapsed .sidebar-footer { padding: 0.75rem 0.5rem; justify-content: center; }
+    #sidebar.collapsed .sidebar-footer .sidebar-user-info { display: none; }
+    #sidebar.collapsed .sidebar-footer .sidebar-logout { margin: 0; }
+    #sidebar.collapsed .group-sub { max-height: 0 !important; }
+    #sidebar.collapsed .group-arrow { display: none; }
+    #sidebar.collapsed nav { padding-left: 0.375rem; padding-right: 0.375rem; }
+  }
+
+  /* Expandable group arrow */
+  .group-arrow { transition: transform 0.2s ease; display: inline-block; }
+  .group-toggle[aria-expanded="true"] .group-arrow { transform: rotate(90deg); }
+  .group-sub { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+  .group-toggle[aria-expanded="true"] + .group-sub { max-height: 10rem; }
+
+  /* Tooltip for collapsed items */
+  #sidebar.collapsed .sidebar-item { position: relative; }
+  #sidebar.collapsed .sidebar-item::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0.5rem;
+    padding: 0.375rem 0.625rem;
+    background: #1e293b;
+    color: #f1f5f9;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+  }
+  #sidebar.collapsed .sidebar-item:hover::after { opacity: 1; }
+</style>
 {% endblock %}
 
 {% block layout %}
@@ -15,21 +66,25 @@
   <div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
 
   <!-- Sidebar -->
-  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-60 lg:w-64 flex-shrink-0 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0">
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-60 lg:w-64 flex-shrink-0 bg-slate-900 text-white flex flex-col transition-all duration-300 ease-in-out -translate-x-full md:translate-x-0">
 
     <!-- Logo -->
-    <div class="flex items-center justify-between h-16 px-4 lg:px-5 border-b border-slate-800">
-      <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
+    <div class="flex items-center justify-between h-16 px-4 lg:px-5 border-b border-slate-800 flex-shrink-0">
+      <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0">
           <i class="fa-solid fa-briefcase text-white text-sm"></i>
         </div>
-        <div>
+        <div class="sidebar-logo-text whitespace-nowrap">
           <span class="text-base font-bold tracking-tight">Bora</span>
           <span class="text-base font-light text-slate-300">Contratar</span>
         </div>
       </a>
       <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white transition-colors p-1">
         <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+      <!-- Desktop collapse toggle -->
+      <button onclick="toggleCollapse()" class="hidden md:flex text-slate-400 hover:text-white transition-colors p-1 -mr-1" title="Recolher menu">
+        <i class="fa-solid fa-angles-left text-sm sidebar-collapse-icon"></i>
       </button>
     </div>
 
@@ -38,167 +93,176 @@
 
       <!-- Dashboard — all roles -->
       <a href="{{ url_for('admin.dashboard') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Dashboard"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint == 'admin.dashboard' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-chart-pie w-5 text-center text-sm"></i>
-        <span class="text-sm">Dashboard</span>
+        <i class="fa-solid fa-chart-pie w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Dashboard</span>
       </a>
 
       <!-- ===== RECRUTAMENTO ===== -->
       {% if papel in ('admin', 'rh', 'superadmin') %}
       <div class="pt-5 pb-1.5 px-3">
-        <p class="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Recrutamento</p>
+        <p class="sidebar-section-title text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Recrutamento</p>
       </div>
 
-      <a href="{{ url_for('admin.vagas_listar') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
-                {% if request.endpoint == 'admin.vagas_listar' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
-                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-briefcase w-5 text-center text-sm"></i>
-        <span class="text-sm">Vagas</span>
-      </a>
-      <a href="{{ url_for('admin.vaga_nova') }}"
-         class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 ml-6
-                {% if request.endpoint == 'admin.vaga_nova' %}text-brand-400 font-medium
-                {% else %}text-slate-400 hover:text-white{% endif %}">
-        <i class="fa-solid fa-plus w-5 text-center text-[10px]"></i>
-        <span class="text-xs">Nova Vaga</span>
-      </a>
-
-      <a href="{{ url_for('admin.solicitacoes_listar') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
-                {% if request.endpoint and 'solicitacoes' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
-                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-inbox w-5 text-center text-sm"></i>
-        <span class="text-sm">Solicitações</span>
-      </a>
+      <button type="button" data-group="vagas" data-tooltip="Vagas"
+         class="group-toggle sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 w-full text-left
+                {% if request.endpoint and request.endpoint in ('admin.vagas_listar', 'admin.vaga_nova', 'admin.vaga_editar') %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}"
+         aria-expanded="{% if request.endpoint and request.endpoint in ('admin.vaga_nova', 'admin.vaga_editar') %}true{% else %}false{% endif %}">
+        <i class="fa-solid fa-briefcase w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm flex-1">Vagas</span>
+        <i class="fa-solid fa-chevron-right group-arrow sidebar-label text-[10px] text-slate-500"></i>
+      </button>
+      <div class="group-sub pl-5">
+        <a href="{{ url_for('admin.vagas_listar') }}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150
+                  {% if request.endpoint == 'admin.vagas_listar' %}text-brand-400 font-medium
+                  {% else %}text-slate-400 hover:text-white{% endif %}">
+          <i class="fa-solid fa-list w-5 text-center text-[10px]"></i>
+          <span class="sidebar-label text-xs">Todas as Vagas</span>
+        </a>
+        <a href="{{ url_for('admin.vaga_nova') }}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150
+                  {% if request.endpoint == 'admin.vaga_nova' %}text-brand-400 font-medium
+                  {% else %}text-slate-400 hover:text-white{% endif %}">
+          <i class="fa-solid fa-plus w-5 text-center text-[10px]"></i>
+          <span class="sidebar-label text-xs">Nova Vaga</span>
+        </a>
+      </div>
 
       <a href="{{ url_for('admin.candidaturas_listar') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Candidaturas"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint == 'admin.candidaturas_listar' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-users w-5 text-center text-sm"></i>
-        <span class="text-sm">Candidaturas</span>
+        <i class="fa-solid fa-users w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Candidaturas</span>
       </a>
 
       <a href="{{ url_for('admin.banco_talentos') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Banco de Talentos"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint == 'admin.banco_talentos' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-database w-5 text-center text-sm"></i>
-        <span class="text-sm">Banco de Talentos</span>
+        <i class="fa-solid fa-database w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Banco de Talentos</span>
       </a>
 
       <a href="{{ url_for('admin.entrevistas_listar') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
-                {% if request.endpoint and 'entrevista' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+         data-tooltip="Entrevistas"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint and 'entrevista' in request.endpoint and 'agenda' not in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-people-arrows w-5 text-center text-sm"></i>
-        <span class="text-sm">Entrevistas</span>
+        <i class="fa-solid fa-people-arrows w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Entrevistas</span>
       </a>
 
       <a href="{{ url_for('entrevista.agenda') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Agenda"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint and 'agenda' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-calendar-days w-5 text-center text-sm"></i>
-        <span class="text-sm">Agenda</span>
+        <i class="fa-solid fa-calendar-days w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Agenda</span>
       </a>
 
-      <a href="{{ url_for('admin.fichas_listar') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
-                {% if request.endpoint and 'fichas' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
-                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-file-lines w-5 text-center text-sm"></i>
-        <span class="text-sm">Fichas Técnicas</span>
-      </a>
-      <a href="{{ url_for('admin.beneficios_listar') }}"
-         class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 ml-6
-                {% if request.endpoint and 'beneficios' in request.endpoint %}text-brand-400 font-medium
-                {% else %}text-slate-400 hover:text-white{% endif %}">
-        <i class="fa-solid fa-gift w-5 text-center text-[10px]"></i>
-        <span class="text-xs">Benefícios</span>
-      </a>
+      <button type="button" data-group="fichas" data-tooltip="Fichas Técnicas"
+         class="group-toggle sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 w-full text-left
+                {% if request.endpoint and ('fichas' in request.endpoint or 'beneficios' in request.endpoint) %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}"
+         aria-expanded="{% if request.endpoint and 'beneficios' in request.endpoint %}true{% else %}false{% endif %}">
+        <i class="fa-solid fa-file-lines w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm flex-1">Fichas Técnicas</span>
+        <i class="fa-solid fa-chevron-right group-arrow sidebar-label text-[10px] text-slate-500"></i>
+      </button>
+      <div class="group-sub pl-5">
+        <a href="{{ url_for('admin.fichas_listar') }}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150
+                  {% if request.endpoint and 'fichas' in request.endpoint and 'beneficios' not in request.endpoint %}text-brand-400 font-medium
+                  {% else %}text-slate-400 hover:text-white{% endif %}">
+          <i class="fa-solid fa-list w-5 text-center text-[10px]"></i>
+          <span class="sidebar-label text-xs">Fichas</span>
+        </a>
+        <a href="{{ url_for('admin.beneficios_listar') }}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150
+                  {% if request.endpoint and 'beneficios' in request.endpoint %}text-brand-400 font-medium
+                  {% else %}text-slate-400 hover:text-white{% endif %}">
+          <i class="fa-solid fa-gift w-5 text-center text-[10px]"></i>
+          <span class="sidebar-label text-xs">Benefícios</span>
+        </a>
+      </div>
       {% endif %}
 
       <!-- ===== SOLICITAÇÕES ===== -->
       {% if papel in ('admin', 'rh', 'superadmin', 'gestor', 'aprovador') %}
       <div class="pt-5 pb-1.5 px-3">
-        <p class="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Solicitações</p>
+        <p class="sidebar-section-title text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Solicitações</p>
       </div>
       {% endif %}
 
       {% if papel == 'gestor' %}
       <a href="{{ url_for('admin.dashboard') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Minhas Solicitações"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint and 'solicitacao' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-clock w-5 text-center text-sm"></i>
-        <span class="text-sm">Minhas Solicitações</span>
-      </a>
-      <a href="{{ url_for('entrevista.agenda') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
-                {% if request.endpoint and 'agenda' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
-                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-calendar-days w-5 text-center text-sm"></i>
-        <span class="text-sm">Agenda</span>
-      </a>
-      <a href="{{ url_for('notificacao.listar') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
-                {% if request.endpoint and 'notificacao' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
-                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-regular fa-bell w-5 text-center text-sm"></i>
-        <span class="text-sm">Notificações</span>
-        {% if notificacoes_nao_lidas > 0 %}
-        <span class="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500 text-white">{{ notificacoes_nao_lidas }}</span>
-        {% endif %}
+        <i class="fa-solid fa-clock w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Minhas Solicitações</span>
       </a>
       <a href="{{ url_for('solicitacao.nova') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Nova Solicitação"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint == 'solicitacao.nova' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-plus w-5 text-center text-sm"></i>
-        <span class="text-sm">Nova Solicitação</span>
+        <i class="fa-solid fa-plus w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Nova Solicitação</span>
       </a>
       {% endif %}
 
       {% if papel == 'aprovador' %}
       <a href="{{ url_for('admin.dashboard') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Aprovações Pendentes"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint and 'aprovar' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-check-double w-5 text-center text-sm"></i>
-        <span class="text-sm">Aprovações Pendentes</span>
-      </a>
-      <a href="{{ url_for('notificacao.listar') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
-                {% if request.endpoint and 'notificacao' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
-                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-regular fa-bell w-5 text-center text-sm"></i>
-        <span class="text-sm">Notificações</span>
-        {% if notificacoes_nao_lidas > 0 %}
-        <span class="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500 text-white">{{ notificacoes_nao_lidas }}</span>
-        {% endif %}
+        <i class="fa-solid fa-check-double w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Aprovações Pendentes</span>
       </a>
       {% endif %}
 
       {% if papel in ('admin', 'rh', 'superadmin') %}
       <a href="{{ url_for('solicitacao.nova') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Nova Solicitação"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint and request.endpoint == 'solicitacao.nova' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-pen-to-square w-5 text-center text-sm"></i>
-        <span class="text-sm">Nova Solicitação</span>
+        <i class="fa-solid fa-pen-to-square w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Nova Solicitação</span>
       </a>
+      <a href="{{ url_for('admin.solicitacoes_listar') }}"
+         data-tooltip="Solicitações"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+                {% if request.endpoint and 'solicitacoes' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
+                {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
+        <i class="fa-solid fa-inbox w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Solicitações</span>
+      </a>
+      {% endif %}
+
+      <!-- ===== NOTIFICAÇÕES ===== -->
+      {% if papel in ('admin', 'rh', 'superadmin', 'gestor', 'aprovador') %}
       <a href="{{ url_for('notificacao.listar') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Notificações"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint and 'notificacao' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-regular fa-bell w-5 text-center text-sm"></i>
-        <span class="text-sm">Notificações</span>
+        <i class="fa-regular fa-bell w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Notificações</span>
         {% if notificacoes_nao_lidas > 0 %}
-        <span class="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500 text-white">{{ notificacoes_nao_lidas }}</span>
+        <span class="sidebar-badge ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500 text-white">{{ notificacoes_nao_lidas }}</span>
         {% endif %}
       </a>
       {% endif %}
@@ -206,24 +270,26 @@
       <!-- ===== ADMINISTRAÇÃO ===== -->
       {% if papel in ('admin', 'superadmin') %}
       <div class="pt-5 pb-1.5 px-3">
-        <p class="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Administração</p>
+        <p class="sidebar-section-title text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Administração</p>
       </div>
 
       <a href="{{ url_for('auth.gerenciar_usuarios') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Usuários"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint and 'usuarios' in request.endpoint %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-users-gear w-5 text-center text-sm"></i>
-        <span class="text-sm">Usuários</span>
+        <i class="fa-solid fa-users-gear w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm">Usuários</span>
       </a>
 
       <a href="{{ url_for('admin.upgrade') }}"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
+         data-tooltip="Plano"
+         class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150
                 {% if request.endpoint == 'admin.upgrade' %}bg-brand-600/15 text-brand-400 border-l-[3px] border-brand-500 font-medium
                 {% else %}text-slate-300 hover:text-white hover:bg-slate-800/80{% endif %}">
-        <i class="fa-solid fa-crown w-5 text-center text-sm"></i>
-        <span class="text-sm flex-1">Plano</span>
-        <span class="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-brand-600/20 text-brand-400 border border-brand-600/30">Freemium</span>
+        <i class="fa-solid fa-crown w-5 text-center text-sm flex-shrink-0"></i>
+        <span class="sidebar-label text-sm flex-1">Plano</span>
+        <span class="sidebar-badge px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-brand-600/20 text-brand-400 border border-brand-600/30">Freemium</span>
       </a>
       {% endif %}
 
@@ -232,14 +298,14 @@
     </nav>
 
     <!-- User footer -->
-    <div class="flex-shrink-0 px-3 lg:px-4 py-3 border-t border-slate-800">
+    <div class="sidebar-footer flex-shrink-0 px-3 lg:px-4 py-3 border-t border-slate-800">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
           {{ iniciais }}
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-white truncate leading-tight">{{ nome }}</p>
-          <span class="inline-block px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded mt-0.5
+        <div class="sidebar-user-info flex-1 min-w-0">
+          <p class="sidebar-user-name text-sm font-medium text-white truncate leading-tight">{{ nome }}</p>
+          <span class="sidebar-user-role inline-block px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded mt-0.5
             {% if papel == 'superadmin' %}bg-green-600/25 text-green-400
             {% elif papel == 'admin' %}bg-purple-600/25 text-purple-400
             {% elif papel == 'rh' %}bg-blue-600/25 text-blue-400
@@ -248,7 +314,7 @@
             {{ {'superadmin':'Super Admin', 'admin':'Admin', 'rh':'RH', 'gestor':'Gestor', 'aprovador':'Aprovador'}.get(papel, papel) }}
           </span>
         </div>
-        <a href="{{ url_for('auth.logout') }}" class="text-slate-500 hover:text-red-400 transition-colors p-1" title="Sair">
+        <a href="{{ url_for('auth.logout') }}" class="sidebar-logout text-slate-500 hover:text-red-400 transition-colors p-1" title="Sair">
           <i class="fa-solid fa-right-from-bracket"></i>
         </a>
       </div>
@@ -269,15 +335,6 @@
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="hidden sm:flex items-center gap-2 text-sm text-slate-400">
-          <a href="{{ url_for('notificacao.listar') }}" class="relative p-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-            <i class="fa-regular fa-bell text-lg"></i>
-            <span id="notificacao-badge"
-                  class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5 {% if notificacoes_nao_lidas == 0 %}hidden{% endif %}">
-              {{ notificacoes_nao_lidas }}
-            </span>
-          </a>
-        </div>
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-xs flex-shrink-0" title="{{ nome }}">
             {{ iniciais }}
@@ -316,11 +373,47 @@
 </div>
 
 <script>
+// Mobile: toggle sidebar slide in/out
 function toggleSidebar() {
   var sidebar = document.getElementById('sidebar');
   var backdrop = document.getElementById('sidebar-backdrop');
   sidebar.classList.toggle('-translate-x-full');
   backdrop.classList.toggle('hidden');
+}
+
+// Desktop: toggle collapsed/expanded
+function toggleCollapse() {
+  var sidebar = document.getElementById('sidebar');
+  var icon = document.querySelector('.sidebar-collapse-icon');
+  sidebar.classList.toggle('collapsed');
+  if (sidebar.classList.contains('collapsed')) {
+    icon.classList.remove('fa-angles-left');
+    icon.classList.add('fa-angles-right');
+  } else {
+    icon.classList.remove('fa-angles-right');
+    icon.classList.add('fa-angles-left');
+  }
+}
+
+// Expandable groups: toggle + localStorage
+function initGroups() {
+  var toggles = document.querySelectorAll('.group-toggle[data-group]');
+  toggles.forEach(function(btn) {
+    var group = btn.getAttribute('data-group');
+    var key = 'sidebar_group_' + group;
+
+    // Restore state from localStorage
+    var saved = localStorage.getItem(key);
+    if (saved !== null) {
+      btn.setAttribute('aria-expanded', saved);
+    }
+
+    btn.addEventListener('click', function() {
+      var expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      localStorage.setItem(key, String(!expanded));
+    });
+  });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -330,6 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
       toggleSidebar();
     });
   }
+  initGroups();
 });
 </script>
 {% block scripts %}{% endblock %}
