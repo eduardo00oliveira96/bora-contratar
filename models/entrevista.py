@@ -159,11 +159,23 @@ def get_progresso_candidato(candidatura_id):
     return result.data if result.data else []
 
 
-def avancar_etapa(entrevista_id, status, feedback="", entrevistador_id=None):
+def avancar_etapa(entrevista_id, status, feedback="", entrevistador_id=None, agendado_para=None):
     tenant_id = get_tenant_id()
     if not tenant_id:
         return
     client = get_supabase_client()
+    
+    # Busca dados atuais antes do update para saber vaga_id e candidatura_id
+    entrevista_atual = client.table("entrevistas_candidato").select("*, etapas_entrevista!inner(vaga_id, ordem, titulo, responsavel_papel)").eq("id", entrevista_id).eq("tenant_id", tenant_id).limit(1).execute()
+    if not entrevista_atual.data:
+        logger.warning(f"Entrevista {entrevista_id} não encontrada para avançar.")
+        return
+
+    vaga_id = entrevista_atual.data[0]["etapas_entrevista"]["vaga_id"]
+    candidatura_id = entrevista_atual.data[0]["candidatura_id"]
+    ordem_atual = entrevista_atual.data[0]["etapas_entrevista"]["ordem"]
+    etapa_atual_titulo = entrevista_atual.data[0]["etapas_entrevista"]["titulo"]
+
     payload = {
         "status": status,
         "realizado_em": "now()",
@@ -172,20 +184,15 @@ def avancar_etapa(entrevista_id, status, feedback="", entrevistador_id=None):
         payload["feedback"] = feedback
     if entrevistador_id:
         payload["entrevistador_id"] = entrevistador_id
+    
+    # 1. Atualiza a etapa atual
     client.table("entrevistas_candidato").update(payload).eq("id", entrevista_id).eq("tenant_id", tenant_id).execute()
-
-    entrevista = client.table("entrevistas_candidato").select("*, etapas_entrevista!inner(vaga_id, ordem)").eq("id", entrevista_id).eq("tenant_id", tenant_id).limit(1).execute()
-    if not entrevista.data:
-        return
-
-    vaga_id = entrevista.data[0]["etapas_entrevista"]["vaga_id"]
-    candidatura_id = entrevista.data[0]["candidatura_id"]
 
     if status == "reprovado":
         client.table("candidaturas").update({"status": "Reprovado", "updated_at": "now()"}).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
         from models.notificacao import notificar_candidato_reprovado
         vaga_info = client.table("vagas").select("id, titulo").eq("id", vaga_id).eq("tenant_id", tenant_id).limit(1).execute()
-        cand_info = client.table("candidaturas").select("nome").eq("id", candidatura_id).limit(1).execute()
+        cand_info = client.table("candidaturas").select("nome").eq("id", candidatura_id).eq("tenant_id", tenant_id).limit(1).execute()
         if vaga_info.data and cand_info.data:
             notificar_candidato_reprovado(
                 {"id": vaga_id, "titulo": vaga_info.data[0].get("titulo", "")},
@@ -195,14 +202,52 @@ def avancar_etapa(entrevista_id, status, feedback="", entrevistador_id=None):
         return
 
     if status == "aprovado":
+        # 2. Agendar próxima etapa se data fornecida
+        if agendado_para:
+            proxima_etapa = client.table("etapas_entrevista").select("id, titulo").eq("vaga_id", vaga_id).eq("tenant_id", tenant_id).gt("ordem", ordem_atual).order("ordem", desc=False).limit(1).execute()
+            if proxima_etapa.data:
+                proxima_etapa_id = proxima_etapa.data[0]["id"]
+                prox_titulo = proxima_etapa.data[0]["titulo"]
+                
+                # Busca registro da próxima entrevista do candidato
+                prox_res = client.table("entrevistas_candidato").select("id").eq("candidatura_id", candidatura_id).eq("etapa_id", proxima_etapa_id).eq("tenant_id", tenant_id).limit(1).execute()
+                
+                if prox_res.data:
+                    prox_ent_id = prox_res.data[0]["id"]
+                    client.table("entrevistas_candidato").update({
+                        "status": "agendado", 
+                        "agendado_para": agendado_para
+                    }).eq("id", prox_ent_id).eq("tenant_id", tenant_id).execute()
+                    
+                    # Atualiza campo denormalizado na candidatura
+                    client.table("candidaturas").update({
+                        "etapa_entrevista": prox_titulo,
+                        "updated_at": "now()"
+                    }).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
+
+                    # NOTIFICAÇÃO: RH agendou com gestor (ou próxima etapa)
+                    try:
+                        from models.notificacao import notificar_entrevista_agendada
+                        from models.vaga import get_vaga_by_id
+                        vaga_obj = get_vaga_by_id(vaga_id)
+                        cand_info = client.table("candidaturas").select("nome").eq("id", candidatura_id).eq("tenant_id", tenant_id).limit(1).execute()
+                        if vaga_obj and cand_info.data:
+                            notificar_entrevista_agendada(
+                                vaga_obj, cand_info.data[0]["nome"], prox_ent_id, agendado_para, candidatura_id
+                            )
+                    except Exception as e:
+                        logger.error(f"Erro ao notificar agendamento em avancar_etapa: {e}")
+
+        # 3. Verifica se concluiu todas
         etapas = client.table("etapas_entrevista").select("id").eq("vaga_id", vaga_id).eq("tenant_id", tenant_id).order("ordem", desc=False).execute()
         total = len(etapas.data or [])
-        ordens = [e["etapas_entrevista"]["ordem"] for e in client.table("entrevistas_candidato").select("*, etapas_entrevista!inner(ordem)").eq("candidatura_id", candidatura_id).eq("tenant_id", tenant_id).eq("status", "aprovado").execute().data or []]
-        if len(ordens) >= total:
+        
+        aprovadas_res = client.table("entrevistas_candidato").select("id").eq("candidatura_id", candidatura_id).eq("tenant_id", tenant_id).eq("status", "aprovado").execute()
+        if len(aprovadas_res.data or []) >= total:
             client.table("candidaturas").update({"status": "Aprovado_Entrevistas", "updated_at": "now()"}).eq("id", candidatura_id).eq("tenant_id", tenant_id).execute()
             from models.notificacao import notificar_candidato_aprovado
             vaga_info = client.table("vagas").select("id, titulo").eq("id", vaga_id).eq("tenant_id", tenant_id).limit(1).execute()
-            cand_info = client.table("candidaturas").select("nome").eq("id", candidatura_id).limit(1).execute()
+            cand_info = client.table("candidaturas").select("nome").eq("id", candidatura_id).eq("tenant_id", tenant_id).limit(1).execute()
             if vaga_info.data and cand_info.data:
                 notificar_candidato_aprovado(
                     {"id": vaga_id, "titulo": vaga_info.data[0].get("titulo", "")},
@@ -327,19 +372,24 @@ def get_agendamentos():
     if not tenant_id:
         return []
     client = get_supabase_client()
+    
+    # Query otimizada com join para candidaturas e candidatos para evitar N+1 queries
     result = client.table("entrevistas_candidato") \
-        .select("*, etapas_entrevista!entrevistas_candidato_etapa_id_fkey(*)") \
+        .select("*, etapas_entrevista!entrevistas_candidato_etapa_id_fkey(*), candidaturas!inner(nome, vaga_id, vagas!inner(titulo), candidatos!inner(nome, email))") \
         .eq("tenant_id", tenant_id) \
         .eq("status", "agendado") \
         .not_.is_("agendado_para", "null") \
         .order("agendado_para", desc=False) \
         .execute()
+        
     data = result.data or []
-    from models.candidatura import get_candidatura_by_id
     out = []
     for row in data:
         etapa = row.pop("etapas_entrevista", {}) or {}
-        cand = get_candidatura_by_id(row.get("candidatura_id"))
+        cand_rel = row.pop("candidaturas", {}) or {}
+        vaga_rel = cand_rel.pop("vagas", {}) or {}
+        pessoal_rel = cand_rel.pop("candidatos", {}) or {}
+        
         out.append({
             "id": row["id"],
             "candidatura_id": row["candidatura_id"],
@@ -351,10 +401,10 @@ def get_agendamentos():
             "etapa_titulo": etapa.get("titulo", ""),
             "etapa_ordem": etapa.get("ordem", 0),
             "responsavel_papel": etapa.get("responsavel_papel", ""),
-            "candidato_nome": cand.get("nome", "") if cand else "",
-            "candidato_email": cand.get("email", "") if cand else "",
-            "vaga_id": cand.get("vaga_id", "") if cand else "",
-            "vaga_titulo": cand.get("titulo_vaga", "") if cand else "",
+            "candidato_nome": pessoal_rel.get("nome", cand_rel.get("nome", "")),
+            "candidato_email": pessoal_rel.get("email", ""),
+            "vaga_id": cand_rel.get("vaga_id", ""),
+            "vaga_titulo": vaga_rel.get("titulo", ""),
         })
     return out
 

@@ -43,13 +43,18 @@ def pipeline(id):
 def agenda():
     agendamentos = get_agendamentos()
     from collections import defaultdict
+    from datetime import datetime
+    hoje_str = datetime.now().strftime('%Y-%m-%d')
+    
     grupos = defaultdict(list)
     for a in agendamentos:
         dia = (a.get("agendado_para") or "")[:10]
         grupos[dia].append(a)
+        
     return render_template('admin/entrevistas/agenda.html',
                          grupos=dict(grupos),
-                         total=len(agendamentos))
+                         total=len(agendamentos),
+                         hoje_str=hoje_str)
 
 
 @entrevista_bp.route('/vaga/<uuid:id>/configurar', methods=['POST'])
@@ -368,7 +373,8 @@ def kanban_mover():
         if not entrevista_id:
             return {"ok": False, "erro": "entrevista_id necessário"}, 400
         usuario_id = g.usuario.get("id")
-        avancar_etapa(str(entrevista_id), "aprovado", feedback, usuario_id)
+        agendado_para = data.get("agendado_para")
+        avancar_etapa(str(entrevista_id), "aprovado", feedback, usuario_id, agendado_para=agendado_para)
     elif acao == "reprovar":
         if not entrevista_id:
             return {"ok": False, "erro": "entrevista_id necessário"}, 400

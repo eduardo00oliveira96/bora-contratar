@@ -1,0 +1,1636 @@
+{% extends "base.html" %} {% block title %}Bora Contratar | Plataforma de IA
+para Recrutamento e Seleção de PMEs{% endblock %} {% block head %}
+<meta
+  name="description"
+  content="A plataforma de IA nº1 para PMEs brasileiras contratarem mais rápido. Avaliação de currículos em 30s, pipeline Kanban, banco de talentos e aprovação em cadeia. Do pedido à contratação."
+/>
+<meta
+  name="keywords"
+  content="recrutamento e seleção, vaga, contratação, talentos, headhunter, processo seletivo, banco de currículos, entrevista, onboarding, agência de recrutamento, consultoria de RH, software rh, sistema de recrutamento, avaliação de currículos com IA"
+/>
+<meta
+  property="og:title"
+  content="Bora Contratar | Plataforma de IA para Recrutamento e Seleção"
+/>
+<meta
+  property="og:description"
+  content="A plataforma de IA que automatiza todo o fluxo de recrutamento — do pedido de contratação à assinatura da carta-proposta."
+/>
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://boracontratar.com.br" />
+<meta
+  property="og:image"
+  content="https://boracontratar.com.br/static/og-image.png"
+/>
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Bora Contratar",
+    "description": "Plataforma de IA para recrutamento e seleção de PMEs brasileiras",
+    "url": "https://boracontratar.com.br",
+    "offers": {
+      "@type": "AggregateOffer",
+      "lowPrice": "0",
+      "priceCurrency": "BRL"
+    }
+  }
+</script>
+
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800;1,9..40,400&display=swap");
+  .font-display {
+    font-family: "DM Sans", sans-serif;
+  }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes fadeInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes fadeInRight {
+    from {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  @keyframes glowPulse {
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(234, 88, 12, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(234, 88, 12, 0.6);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes borderGlow {
+    0%,
+    100% {
+      border-color: rgba(234, 88, 12, 0.1);
+    }
+    50% {
+      border-color: rgba(234, 88, 12, 0.5);
+    }
+  }
+
+  .a-fiu {
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+  .a-fil {
+    animation: fadeInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+  .a-fir {
+    animation: fadeInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+  .d1 {
+    animation-delay: 0.1s;
+  }
+  .d2 {
+    animation-delay: 0.2s;
+  }
+  .d3 {
+    animation-delay: 0.3s;
+  }
+  .d4 {
+    animation-delay: 0.4s;
+  }
+
+  /* CTA Shimmer */
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shimmer::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent,
+      rgba(255, 255, 255, 0.15),
+      transparent
+    );
+    transform: rotate(45deg);
+    animation: shimmer 4s infinite;
+  }
+
+  /* Scroll Visibility */
+  .sa {
+    opacity: 0;
+    transform: translateY(30px);
+    transition:
+      opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .sa.vis {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Custom Backgrounds */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(234, 88, 12, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(234, 88, 12, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .hero-gradient {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f172a 100%);
+    background-size: 200% 200%;
+  }
+
+  /* Premium Cards */
+  .glass-card {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-card:hover {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(234, 88, 12, 0.3);
+    transform: translateY(-10px);
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Toggle Switch Styles */
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #1e293b;
+    transition: 0.4s;
+    border-radius: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: #ea580c;
+  }
+  input:checked + .slider:before {
+    transform: translateX(24px);
+  }
+
+  /* Pricing popular */
+  .popular-plan {
+    border-color: rgba(234, 88, 12, 0.5);
+    box-shadow: 0 0 50px -10px rgba(234, 88, 12, 0.3);
+    animation: borderGlow 4s infinite;
+  }
+
+  /* Sticky CTA */
+  .sticky-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    transform: translateY(100%);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    visibility: hidden;
+  }
+  .sticky-cta.show {
+    transform: translateY(0);
+    visibility: visible;
+  }
+</style>
+{% endblock %} {% block layout %}
+<div
+  class="min-h-screen flex flex-col bg-slate-900 font-sans selection:bg-orange-500 selection:text-white text-slate-300"
+>
+  <!-- Navbar -->
+  <header
+    class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 h-20"
+    id="mainHeader"
+  >
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+      <div class="flex justify-between items-center h-full">
+        <a
+          href="{{ url_for('public.index') }}"
+          class="flex items-center gap-3 group"
+        >
+          <div
+            class="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center p-2 group-hover:rotate-12 transition-transform shadow-lg shadow-orange-600/20"
+          >
+            <img
+              src="{{ url_for('static', filename='Logo-maleta.png') }}"
+              alt="Logo"
+              class="w-full h-auto brightness-0 invert"
+            />
+          </div>
+          <span class="text-2xl font-black text-white tracking-tighter"
+            >Bora<span class="text-orange-500 italic">Contratar</span></span
+          >
+        </a>
+        <nav class="hidden md:flex items-center space-x-10">
+          <a
+            href="#diferenciais"
+            class="text-white/60 hover:text-white text-xs font-black uppercase tracking-widest transition-colors"
+            >Funcionalidades</a
+          >
+          <a
+            href="#como-funciona"
+            class="text-white/60 hover:text-white text-xs font-black uppercase tracking-widest transition-colors"
+            >Metodologia</a
+          >
+          <a
+            href="#pricing"
+            class="text-white/60 hover:text-white text-xs font-black uppercase tracking-widest transition-colors"
+            >Preços</a
+          >
+          <a
+            href="{{ url_for('auth.login') }}"
+            class="text-white font-black text-xs uppercase tracking-widest px-8 py-3 rounded-full border border-white/10 bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all"
+            >Entrar</a
+          >
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    <!-- ============ HERO SECTION ============ -->
+    <section
+      class="relative w-full min-h-screen flex items-center pt-20 overflow-hidden hero-gradient"
+    >
+      <div
+        class="absolute inset-0 z-0 bg-[url('https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070')] bg-cover bg-center opacity-10 grayscale brightness-50"
+      ></div>
+      <div
+        class="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-950/60 to-zinc-950"
+      ></div>
+
+      <div
+        class="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full py-24"
+      >
+        <div class="grid lg:grid-cols-12 gap-20 items-center">
+          <div class="lg:col-span-7 space-y-12 text-center lg:text-left">
+            <div class="a-fiu d1 flex justify-center lg:justify-start">
+              <span
+                class="inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-orange-500/5 px-5 py-2 backdrop-blur-xl"
+              >
+                <span
+                  class="w-2 h-2 rounded-full bg-orange-500 animate-ping"
+                ></span>
+                <span
+                  class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500"
+                  >Agentes de IA Generativa Ativos</span
+                >
+              </span>
+            </div>
+
+            <h1
+              class="a-fiu d2 text-6xl sm:text-8xl lg:text-9xl font-black tracking-tighter text-white leading-[0.8]"
+            >
+              Contrate <br />
+              <span
+                class="bg-gradient-to-r from-orange-500 to-amber-300 bg-clip-text text-transparent italic"
+                >o talento 1%</span
+              >
+              <br />
+              em segundos.
+            </h1>
+
+            <p
+              class="a-fiu d3 max-w-xl text-xl text-slate-400 leading-relaxed font-medium mx-auto lg:mx-0"
+            >
+              A plataforma de Recrutamento com IA para PMEs brasileiras. Deixe
+              nossos Agentes filtrarem os melhores candidatos enquanto você foca
+              na entrevista final.
+            </p>
+
+            <div
+              class="a-fiu d4 flex flex-col sm:flex-row gap-6 pt-6 justify-center lg:justify-start"
+            >
+              <a
+                href="{{ url_for('auth.register') }}"
+                class="btn-shimmer group inline-flex items-center justify-center gap-4 rounded-full bg-orange-600 px-12 py-6 text-2xl font-black text-white transition-all hover:bg-orange-500 hover:scale-105 active:scale-95 shadow-[0_20px_50px_rgba(234,88,12,0.3)]"
+              >
+                Iniciar Teste Grátis
+                <i
+                  class="fa-solid fa-rocket transition-transform group-hover:translate-x-1"
+                ></i>
+              </a>
+              <a
+                href="#como-funciona"
+                class="inline-flex items-center justify-center gap-3 rounded-full border border-white/10 bg-white/5 px-12 py-6 text-lg font-bold text-white backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/30"
+              >
+                <i class="fa-solid fa-play text-orange-500"></i> Ver Demo
+              </a>
+            </div>
+          </div>
+
+          <!-- Mockup visual melhorado -->
+          <div class="lg:col-span-5 hidden lg:block a-fir d4">
+            <div class="relative">
+              <div
+                class="absolute -inset-4 bg-orange-600/20 rounded-[4rem] blur-3xl opacity-30 animate-pulse"
+              ></div>
+              <div
+                class="relative rounded-[3.5rem] border border-white/10 bg-slate-800/20 p-4 backdrop-blur-3xl shadow-2xl"
+              >
+                <div
+                  class="rounded-[2.8rem] overflow-hidden bg-slate-900 border border-white/5 shadow-inner"
+                >
+                  <div class="p-10 space-y-8">
+                    <div class="flex items-center justify-between">
+                      <div class="space-y-1">
+                        <span
+                          class="text-white/30 uppercase font-black text-[9px] tracking-[0.3em]"
+                          >Candidato: André Martins</span
+                        >
+                        <div
+                          class="text-white font-black text-xs tracking-wider"
+                        >
+                          Status:
+                          <span class="text-orange-500 italic"
+                            >Em Processo</span
+                          >
+                        </div>
+                      </div>
+                      <div
+                        class="w-10 h-10 rounded-full bg-orange-600/20 flex items-center justify-center border border-orange-500/30"
+                      >
+                        <i
+                          class="fa-solid fa-user-tie text-orange-500 text-sm"
+                        ></i>
+                      </div>
+                    </div>
+
+                    <!-- Recruitment Flow -->
+                    <div class="space-y-6 relative">
+                      <!-- Vertical line -->
+                      <div
+                        class="absolute left-[19px] top-2 bottom-2 w-px bg-zinc-800"
+                      ></div>
+
+                      <!-- Step 1 -->
+                      <div class="relative flex items-center gap-4 group">
+                        <div
+                          class="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center z-10"
+                        >
+                          <i
+                            class="fa-solid fa-check text-emerald-500 text-xs"
+                          ></i>
+                        </div>
+                        <div class="flex-grow">
+                          <div
+                            class="text-[10px] font-black text-white/40 uppercase tracking-widest"
+                          >
+                            Passo 01
+                          </div>
+                          <div
+                            class="text-sm font-bold text-white tracking-tight"
+                          >
+                            Candidatura Recebida
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Step 2 -->
+                      <div class="relative flex items-center gap-4 group">
+                        <div
+                          class="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center z-10"
+                        >
+                          <i
+                            class="fa-solid fa-robot text-emerald-500 text-xs"
+                          ></i>
+                        </div>
+                        <div class="flex-grow">
+                          <div class="flex justify-between items-center mb-1">
+                            <div
+                              class="text-[10px] font-black text-white/40 uppercase tracking-widest"
+                            >
+                              Passo 02
+                            </div>
+                            <div
+                              class="text-[10px] font-black text-orange-500 tracking-widest"
+                            >
+                              98% FIT
+                            </div>
+                          </div>
+                          <div
+                            class="text-sm font-bold text-white tracking-tight"
+                          >
+                            Análise com IA Concluída
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Step 3 -->
+                      <div class="relative flex items-center gap-4 group">
+                        <div
+                          class="w-10 h-10 rounded-full bg-orange-500 border border-orange-500 flex items-center justify-center z-10 shadow-[0_0_20px_rgba(234,88,12,0.4)] animate-pulse"
+                        >
+                          <i
+                            class="fa-solid fa-comments text-white text-xs"
+                          ></i>
+                        </div>
+                        <div class="flex-grow">
+                          <div
+                            class="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]"
+                          >
+                            Agora
+                          </div>
+                          <div
+                            class="text-sm font-black text-white tracking-tight"
+                          >
+                            Entrevista RH
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Step 4 -->
+                      <div
+                        class="relative flex items-center gap-4 group opacity-30"
+                      >
+                        <div
+                          class="w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center z-10"
+                        >
+                          <i
+                            class="fa-solid fa-handshake text-white text-xs"
+                          ></i>
+                        </div>
+                        <div class="flex-grow">
+                          <div
+                            class="text-[10px] font-black text-white/40 uppercase tracking-widest"
+                          >
+                            Passo 04
+                          </div>
+                          <div
+                            class="text-sm font-bold text-white tracking-tight"
+                          >
+                            Entrevista Gestor
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-white/5">
+                      <div
+                        class="w-full h-12 rounded-xl bg-orange-600 px-6 flex items-center justify-between text-white font-black text-[10px] uppercase tracking-widest cursor-pointer hover:bg-orange-500 transition-colors"
+                      >
+                        <span>Aprovar para Final</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TRUST LOGOS ============ -->
+    <section
+      class="relative z-10 py-20 bg-slate-900 border-y border-white/5 overflow-hidden"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p
+          class="text-center text-slate-600 font-black text-[10px] uppercase tracking-[0.4em] mb-12"
+        >
+          Impulsionando o crescimento de
+        </p>
+        <div
+          class="flex flex-wrap justify-center gap-12 md:gap-24 opacity-60 grayscale hover:grayscale-0 transition-all duration-1000"
+        >
+          <span class="text-2xl font-black text-white italic tracking-tighter"
+            >TECH<span class="text-slate-600 font-normal">SOLUTIONS</span></span
+          >
+          <span class="text-2xl font-black text-white italic tracking-tighter"
+            >INNOVATE<span class="text-slate-600 font-normal">CORP</span></span
+          >
+          <span class="text-2xl font-black text-white italic tracking-tighter"
+            >STARTUP<span class="text-slate-600 font-normal">BR</span></span
+          >
+          <span class="text-2xl font-black text-white italic tracking-tighter"
+            >NEXUS<span class="text-slate-600 font-normal">GROUP</span></span
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DIFERENCIAIS ============ -->
+    <section id="diferenciais" class="py-32 bg-slate-900 relative z-10">
+      <div
+        class="absolute top-0 right-0 w-1/3 h-full bg-orange-600/5 blur-[120px] pointer-events-none rounded-full"
+      ></div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-24 sa">
+          <span
+            class="text-orange-500 font-black text-xs uppercase tracking-[0.4em] mb-4 block italic"
+            >Diferenciais Premium</span
+          >
+          <h2
+            class="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none mb-8"
+          >
+            Por que somos <br />
+            <span class="text-slate-700">diferentes?</span>
+          </h2>
+          <p
+            class="text-slate-500 text-lg max-w-2xl mx-auto font-medium leading-relaxed"
+          >
+            Não somos apenas um software de RH. Somos uma consultoria de IA
+            embutida em uma plataforma intuitiva.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {% set diffs = [ ("fa-wand-magic-sparkles","Triagem em 30s","Nossa IA
+          lê, interpreta e ranqueia currículos por fit técnico e comportamental
+          instantaneamente.","text-orange-400"), ("fa-layer-group","Pipeline
+          Visual","Gerencie candidatos em um Kanban ultra-fluido com automação
+          de arraste e solte.","text-blue-400"), ("fa-calendar-days","Agenda
+          Inteligente","Sincronize com Google/Outlook e deixe o sistema sugerir
+          horários e enviar invites automáticos.","text-emerald-400"),
+          ("fa-comments-dollar","Aprovação de Gestores","Fluxos de aprovação
+          integrados. O gestor recebe no e-mail e aprova o candidato em um
+          clique.","text-amber-400"), ("fa-user-shield","Segurança e
+          LGPD","Conformidade total com a lei brasileira e criptografia de ponta
+          para proteger seus dados.","text-purple-400"),
+          ("fa-file-invoice-dollar","Propostas Digitais","Gere cartas-proposta
+          profissionais e envie para assinatura digital direto pelo
+          sistema.","text-rose-400") ] %} {% for icon, title, desc, color in
+          diffs %}
+          <div
+            class="sa glass-card p-12 rounded-[3.5rem] relative group"
+            style="transition-delay: {{ loop.index0 * 0.1 }}s"
+          >
+            <div
+              class="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mb-10 border border-white/5 group-hover:border-orange-500/40 transition-colors shadow-2xl"
+            >
+              <i class="fa-solid {{ icon }} {{ color }} text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-6 tracking-tight">
+              {{ title }}
+            </h3>
+            <p class="text-slate-500 leading-relaxed text-sm font-medium">
+              {{ desc }}
+            </p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COMO FUNCIONA ============ -->
+    <section
+      id="como-funciona"
+      class="relative z-10 py-32 bg-slate-900 text-white overflow-hidden border-y border-slate-800"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          class="flex flex-col lg:flex-row items-end justify-between mb-32 gap-12"
+        >
+          <div class="max-w-3xl sa">
+            <span
+              class="text-orange-600 font-black text-xs uppercase tracking-[0.3em] mb-6 block"
+              >Fluxo de Alta Performance</span
+            >
+            <h2
+              class="text-5xl md:text-8xl font-black tracking-tighter leading-[0.85]"
+            >
+              Do pedido à <br />
+              <span class="text-slate-300 italic">contratação.</span>
+            </h2>
+          </div>
+          <div class="sa d2">
+            <p
+              class="text-slate-500 text-xl lg:text-right max-w-sm font-bold leading-snug"
+            >
+              Um sistema digital sem atritos, feito para quem não tem tempo a
+              perder.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-16 relative">
+          {% set steps = [ ("fa-file-signature","Abra a Vaga","Defina o perfil
+          em um formulário dinâmico com IA que ajuda a descrever
+          requisitos.","01"), ("fa-wand-magic-sparkles","Triagem Ativa","O
+          sistema ranqueia currículos de diversas fontes e sinaliza os 'Top
+          Performers'.","02"), ("fa-calendar-check","Entreviste","Agende papos e
+          gerencie o pipeline visual sem perder o histórico do talento.","03"),
+          ("fa-handshake-simple","Feche o Negócio","Escolha o melhor talento e
+          envie a proposta final com assinatura digital integrada.","04") ] %}
+          {% for icon, title, desc, num in steps %}
+          <div
+            class="sa relative group"
+            style="transition-delay: {{ loop.index0 * 0.1 }}s"
+          >
+            <div
+              class="w-24 h-24 rounded-[2.5rem] bg-slate-800 flex items-center justify-center mb-10 border border-slate-800 group-hover:bg-orange-600 group-hover:text-white transition-all duration-700 shadow-2xl shadow-zinc-200/50"
+            >
+              <i class="fa-solid {{ icon }} text-4xl"></i>
+            </div>
+            <div class="flex items-center gap-6 mb-6">
+              <span class="text-orange-600 font-black text-6xl">{{ num }}</span>
+              <h3 class="text-3xl font-black tracking-tighter leading-none">
+                {{ title }}
+              </h3>
+            </div>
+            <p class="text-slate-500 leading-relaxed text-sm font-bold">
+              {{ desc }}
+            </p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COMPARATIVO ============ -->
+    <section class="relative z-10 py-32 bg-slate-900">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="mb-24 sa">
+          <h2
+            class="text-5xl md:text-6xl font-black text-white tracking-tight mb-8 leading-none"
+          >
+            O fim do <br /><span class="text-orange-500 italic"
+              >recrutamento manual.</span
+            >
+          </h2>
+          <p class="text-slate-500 text-lg max-w-xl mx-auto font-medium">
+            Compare a dor do processo antigo com a fluidez da nossa IA.
+          </p>
+        </div>
+
+        <div
+          class="grid lg:grid-cols-2 gap-px bg-white/10 rounded-[4rem] overflow-hidden border border-white/10 sa shadow-[0_0_100px_rgba(0,0,0,0.5)]"
+        >
+          <div class="bg-slate-800/40 p-16 md:p-20 text-left">
+            <h4
+              class="text-slate-500 font-black uppercase tracking-widest text-[10px] mb-16"
+            >
+              Método Tradicional
+            </h4>
+            <ul class="space-y-12">
+              <li
+                class="flex items-start gap-6 opacity-30 hover:opacity-100 transition-opacity"
+              >
+                <i
+                  class="fa-solid fa-circle-xmark text-slate-700 mt-1 text-2xl"
+                ></i>
+                <span class="text-slate-400 font-bold leading-relaxed"
+                  >Triagem manual lenta: até 6h por vaga lendo currículos frios
+                  e desatualizados.</span
+                >
+              </li>
+              <li
+                class="flex items-start gap-6 opacity-30 hover:opacity-100 transition-opacity"
+              >
+                <i
+                  class="fa-solid fa-circle-xmark text-slate-700 mt-1 text-2xl"
+                ></i>
+                <span class="text-slate-400 font-bold leading-relaxed"
+                  >Comunicação caótica via dezenas de threads de e-mail,
+                  WhatsApp e papel.</span
+                >
+              </li>
+              <li
+                class="flex items-start gap-6 opacity-30 hover:opacity-100 transition-opacity"
+              >
+                <i
+                  class="fa-solid fa-circle-xmark text-slate-700 mt-1 text-2xl"
+                ></i>
+                <span class="text-slate-400 font-bold leading-relaxed"
+                  >Falta de feedback gera frustração e destrói a reputação da
+                  sua marca empregadora.</span
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="bg-slate-800/80 p-16 md:p-20 relative text-left">
+            <div
+              class="absolute inset-0 bg-orange-600/5 pointer-events-none"
+            ></div>
+            <h4
+              class="text-orange-500 font-black uppercase tracking-widest text-[10px] mb-16"
+            >
+              Com Bora Contratar
+            </h4>
+            <ul class="space-y-12 relative z-10">
+              <li class="flex items-start gap-6">
+                <div
+                  class="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0 shadow-lg shadow-orange-500/20"
+                >
+                  <i class="fa-solid fa-check text-orange-500 text-sm"></i>
+                </div>
+                <span
+                  class="text-white font-black text-xl leading-tight tracking-tight"
+                  >IA faz a triagem técnica em 30s com ranking de fit 100%
+                  pronto.</span
+                >
+              </li>
+              <li class="flex items-start gap-6">
+                <div
+                  class="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0 shadow-lg shadow-orange-500/20"
+                >
+                  <i class="fa-solid fa-check text-orange-500 text-sm"></i>
+                </div>
+                <span
+                  class="text-white font-black text-xl leading-tight tracking-tight"
+                  >Gestão centralizada em pipeline visual, colaborativo e
+                  intuitivo.</span
+                >
+              </li>
+              <li class="flex items-start gap-6">
+                <div
+                  class="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0 shadow-lg shadow-orange-500/20"
+                >
+                  <i class="fa-solid fa-check text-orange-500 text-sm"></i>
+                </div>
+                <span
+                  class="text-white font-black text-xl leading-tight tracking-tight"
+                  >Automações de resposta que mantêm o candidato sempre
+                  engajado.</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CASES DE SUCESSO ============ -->
+    <section class="relative z-10 py-32 bg-slate-900">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-24 sa">
+          <span
+            class="text-orange-600 font-black text-sm uppercase tracking-widest block mb-6 italic underline underline-offset-8 decoration-zinc-100"
+            >Resultados Práticos</span
+          >
+          <h2
+            class="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-none"
+          >
+            Quem usa, <br />
+            <span class="text-slate-300">contrata melhor.</span>
+          </h2>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-12 text-left">
+          {% set cases = [ ("TechSolutions","12 dias","tempo médio para fechar
+          vagas de Dev Senior","from-blue-600 to-indigo-700"),
+          ("InnovateCorp","85%","de redução no esforço manual de
+          triagem","from-orange-600 to-amber-600"), ("StartupBR","3.2x","mais
+          candidatos com fit técnico entrevistados","from-emerald-600
+          to-teal-700") ] %} {% for empresa,metric,desc,grad in cases %}
+          <div
+            class="sa group relative rounded-[3rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.15)] transition-all duration-700 hover:-translate-y-4"
+            style="transition-delay:{{loop.index0 / 5}}s"
+          >
+            <div
+              class="bg-gradient-to-br {{grad}} p-12 min-h-[350px] flex flex-col justify-end text-white"
+            >
+              <div
+                class="text-7xl font-black mb-4 leading-none tracking-tighter"
+              >
+                {{ metric }}
+              </div>
+              <div
+                class="text-white/80 text-sm mb-12 leading-relaxed font-black uppercase tracking-[0.2em]"
+              >
+                {{ desc }}
+              </div>
+              <div
+                class="flex items-center gap-4 font-black italic tracking-tighter pt-8 border-t border-white/10"
+              >
+                <div
+                  class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 text-xs font-black uppercase"
+                >
+                  {{ empresa[0:2] }}
+                </div>
+                <span class="text-xl uppercase tracking-tighter"
+                  >{{ empresa }}</span
+                >
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRICING ============ -->
+    <section
+      id="pricing"
+      class="py-32 bg-slate-900 relative z-10 overflow-hidden"
+    >
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-orange-600/5 rounded-full blur-[150px] pointer-events-none"
+      ></div>
+
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center"
+      >
+        <div class="mb-20 sa">
+          <h2
+            class="text-5xl md:text-8xl font-black text-white mb-8 tracking-tighter"
+          >
+            Planos para decolar.
+          </h2>
+          <p
+            class="text-slate-500 text-xl mb-12 font-medium max-w-2xl mx-auto leading-relaxed"
+          >
+            Comece grátis agora, pague apenas quando precisar de potência máxima
+            para seu time.
+          </p>
+
+          <!-- Billing Toggle Premium -->
+          <div class="flex items-center justify-center gap-6 mb-12">
+            <span
+              class="text-sm font-black transition-all duration-300"
+              id="labelMensal"
+              >MENSAL</span
+            >
+            <label class="switch">
+              <input type="checkbox" id="pricingToggle" />
+              <span class="slider"></span>
+            </label>
+            <div class="flex flex-col items-start">
+              <span
+                class="text-sm font-black text-slate-500 transition-all duration-300"
+                id="labelAnual"
+                >ANUAL</span
+              >
+              <span
+                class="text-orange-500 text-[9px] font-black uppercase tracking-widest bg-orange-600/10 px-2 py-0.5 rounded-full border border-orange-600/20"
+                >Economize 20%</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch text-left"
+        >
+          <!-- Free -->
+          <div
+            class="sa glass-card p-12 rounded-[3.5rem] flex flex-col h-full opacity-60 lg:scale-[0.92] lg:translate-x-10 transition-all duration-700 hover:opacity-100 hover:translate-x-0"
+            style="transition-delay: 0.1s"
+          >
+            <h3
+              class="text-slate-600 font-black text-[10px] uppercase tracking-[0.4em] mb-12 italic"
+            >
+              Small Business
+            </h3>
+            <div class="flex items-baseline gap-1 mb-10">
+              <span
+                class="text-6xl font-black text-white tracking-tighter italic"
+                >Grátis</span
+              >
+            </div>
+            <ul
+              class="space-y-6 mb-16 flex-grow text-slate-400 text-sm font-bold"
+            >
+              <li class="flex items-center gap-4">
+                <i class="fa-solid fa-circle-check text-slate-700"></i> Vagas
+                ilimitadas
+              </li>
+              <li class="flex items-center gap-4">
+                <i class="fa-solid fa-circle-check text-slate-700"></i> Triagem
+                básica por IA
+              </li>
+              <li class="flex items-center gap-4">
+                <i class="fa-solid fa-circle-check text-slate-700"></i> Gestão
+                Kanban
+              </li>
+              <li class="flex items-center gap-4">
+                <i class="fa-solid fa-circle-check text-slate-700"></i> 10
+                currículos /vaga
+              </li>
+            </ul>
+            <a
+              href="{{ url_for('auth.register') }}"
+              class="block w-full py-5 text-center rounded-2xl border border-white/5 text-white/50 font-black uppercase tracking-widest text-xs hover:bg-white/5 transition-all"
+              >Começar Agora</a
+            >
+          </div>
+
+          <!-- Pro -->
+          <div
+            class="sa glass-card popular-plan p-14 rounded-[3.5rem] flex flex-col h-full relative z-20"
+            style="transition-delay: 0s"
+          >
+            <div
+              class="absolute -top-6 left-1/2 -translate-x-1/2 bg-orange-600 text-white text-[10px] font-black uppercase tracking-[0.4em] px-8 py-3 rounded-full shadow-[0_10px_30px_rgba(234,88,12,0.4)] border border-white/10 italic"
+            >
+              O Preferido
+            </div>
+            <h3
+              class="text-orange-500 font-black text-[10px] uppercase tracking-[0.4em] mb-12 italic"
+            >
+              Plano Scalable
+            </h3>
+            <div class="flex items-baseline gap-1 mb-10">
+              <span
+                class="text-7xl font-black text-white tracking-tighter transition-all duration-500"
+                id="proPrice"
+                >R$ 97</span
+              >
+              <span class="text-slate-500 text-sm font-black" id="proPeriod"
+                >/vaga</span
+              >
+            </div>
+            <ul class="space-y-6 mb-16 flex-grow text-white text-sm font-black">
+              <li class="flex items-center gap-4">
+                <i
+                  class="fa-solid fa-circle-check text-orange-500 shadow-glow"
+                ></i>
+                Tudo do Plano Grátis
+              </li>
+              <li class="flex items-center gap-4">
+                <i
+                  class="fa-solid fa-circle-check text-orange-500 shadow-glow"
+                ></i>
+                Triagem de IA Ilimitada
+              </li>
+              <li class="flex items-center gap-4">
+                <i
+                  class="fa-solid fa-circle-check text-orange-500 shadow-glow"
+                ></i>
+                Banco de Talentos Dinâmico
+              </li>
+              <li class="flex items-center gap-4">
+                <i
+                  class="fa-solid fa-circle-check text-orange-500 shadow-glow"
+                ></i>
+                Agendamento com IA
+              </li>
+              <li class="flex items-center gap-4">
+                <i
+                  class="fa-solid fa-circle-check text-orange-500 shadow-glow"
+                ></i>
+                Propostas com Assinatura Digital
+              </li>
+            </ul>
+            <a
+              href="{{ url_for('auth.register') }}"
+              class="btn-shimmer block w-full py-6 text-center rounded-2xl bg-orange-600 text-white font-black hover:bg-orange-500 transition-all shadow-2xl shadow-orange-600/40 text-xl uppercase tracking-tighter"
+              >Assinar Agora</a
+            >
+          </div>
+
+          <!-- Enterprise -->
+          <div
+            class="sa glass-card p-12 rounded-[3.5rem] flex flex-col h-full opacity-60 lg:scale-[0.92] lg:-translate-x-10 transition-all duration-700 hover:opacity-100 hover:translate-x-0"
+            style="transition-delay: 0.15s"
+          >
+            <h3
+              class="text-slate-600 font-black text-[10px] uppercase tracking-[0.4em] mb-12 italic"
+            >
+              Enterprise
+            </h3>
+            <div class="flex items-baseline gap-1 mb-10">
+              <span
+                class="text-5xl font-black text-white tracking-tighter italic"
+                >Custom</span
+              >
+            </div>
+            <ul
+              class="space-y-6 mb-16 flex-grow text-slate-400 text-sm font-bold"
+            >
+              <li class="flex items-center gap-4">
+                <i class="fa-solid fa-circle-check text-slate-700"></i> Tudo do
+                Plano Pro
+              </li>
+              <li class="flex items-center gap-4">
+                <i class="fa-solid fa-circle-check text-slate-700"></i>
+                Integração via API Pública
+              </li>
+              <li class="flex items-center gap-4">
+                <i class="fa-solid fa-circle-check text-slate-700"></i> Painel
+                Multi-unidade
+              </li>
+              <li class="flex items-center gap-4">
+                <i class="fa-solid fa-circle-check text-slate-700"></i> Suporte
+                Dedicado 24/7
+              </li>
+            </ul>
+            <a
+              href="mailto:vendas@boracontratar.com.br"
+              class="block w-full py-5 text-center rounded-2xl border border-white/5 text-white/50 font-black uppercase tracking-widest text-xs hover:bg-white/5 transition-all"
+              >Falar com Vendas</a
+            >
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TESTIMONIALS ============ -->
+    <section class="relative z-10 py-32 bg-slate-900">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-20 items-center">
+          <div class="sa">
+            <span
+              class="text-orange-600 font-black text-xs uppercase tracking-[0.4em] mb-8 block italic"
+              >O que dizem os líderes</span
+            >
+            <h2
+              class="text-5xl md:text-7xl font-black text-slate-950 tracking-tighter leading-none mb-10"
+            >
+              RH Humano, <br />
+              <span class="text-slate-300">turbinado por IA.</span>
+            </h2>
+            <div class="space-y-12">
+              <div class="border-l-4 border-orange-500 pl-8 py-4">
+                <p
+                  class="text-2xl text-slate-800 font-bold italic leading-relaxed mb-6"
+                >
+                  "O Bora Contratar não só acelerou nossas contratações, mas
+                  melhorou drasticamente a qualidade técnica de quem chega para
+                  a entrevista final."
+                </p>
+                <div class="flex items-center gap-4">
+                  <div
+                    class="w-14 h-14 rounded-2xl bg-zinc-100 flex items-center justify-center font-black text-slate-400"
+                  >
+                    AM
+                  </div>
+                  <div>
+                    <div class="font-black text-slate-950 tracking-tight">
+                      André Martins
+                    </div>
+                    <div
+                      class="text-xs font-bold text-slate-500 uppercase tracking-widest"
+                    >
+                      CTO @ TechSolutions
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="grid gap-8">
+            {% set reviews = [ ("Marina Souza","Head de RH @ InnovateCorp","O
+            suporte da plataforma é impecável e a curva de aprendizado para os
+            gestores foi quase zero. Sensacional."), ("Ricardo Lima","Founder @
+            StartupBR","Reduzimos nosso custo de aquisição de talentos em 40% no
+            primeiro mês de uso ativo.") ] %} {% for nome, cargo, txt in reviews
+            %}
+            <div
+              class="sa glass-card bg-slate-800 border-slate-800 p-10 rounded-[2.5rem] shadow-xl shadow-zinc-200/50"
+              style="transition-delay:{{ loop.index0 * 0.2 }}s"
+            >
+              <div class="flex gap-1 text-orange-500 mb-6">
+                <i class="fa-solid fa-star text-xs"></i
+                ><i class="fa-solid fa-star text-xs"></i
+                ><i class="fa-solid fa-star text-xs"></i
+                ><i class="fa-solid fa-star text-xs"></i
+                ><i class="fa-solid fa-star text-xs"></i>
+              </div>
+              <p class="text-slate-600 font-bold leading-relaxed mb-8">
+                "{{ txt }}"
+              </p>
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center font-black text-slate-500 text-[10px]"
+                >
+                  {{ nome[0:2] }}
+                </div>
+                <div>
+                  <div class="font-black text-slate-950 text-sm tracking-tight">
+                    {{ nome }}
+                  </div>
+                  <div
+                    class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"
+                  >
+                    {{ cargo }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="relative z-10 py-32 bg-slate-900">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-24 sa">
+          <h2
+            class="text-5xl font-black tracking-tighter text-white leading-none italic uppercase"
+          >
+            FAQ <span class="text-orange-500">.</span>
+          </h2>
+        </div>
+        <div class="space-y-6">
+          {% set faqs = [ ("O que exatamente os 'Agentes de IA' fazem?","Nossos
+          agentes são modelos de linguagem treinados especificamente para
+          recrutamento. Eles não apenas buscam palavras-chave, mas entendem o
+          contexto da experiência, os resultados alcançados e as competências
+          implícitas em cada currículo."), ("A IA substitui o RH
+          humano?","Nunca. A IA elimina o trabalho braçal e repetitivo (ler
+          centenas de currículos desqualificados), permitindo que o RH foque no
+          que importa: cultura, valores e a conexão humana durante as
+          entrevistas."), ("Como funciona o modelo de pagamento por
+          vaga?","Diferente de assinaturas mensais fixas e caras, você pode
+          optar por pagar apenas pelo uso ativo. Cada vaga aberta consome
+          créditos que garantem todas as funcionalidades premium para aquele
+          processo específico."), ("Meus dados e os dos candidatos estão
+          protegidos?","Sim. Operamos em conformidade total com a LGPD. Os dados
+          são criptografados em repouso e em trânsito, e você tem controle total
+          sobre a retenção das informações em seu banco de talentos."), ("É
+          possível integrar com outras ferramentas?","Sim, possuímos uma API
+          robusta no plano Enterprise e integrações nativas com os principais
+          calendários e sistemas de comunicação do mercado.") ] %} {% for q, r
+          in faqs %}
+          <div
+            class="sa border border-white/5 bg-white/2 rounded-[2rem] overflow-hidden hover:border-orange-500/30 transition-all duration-500"
+          >
+            <button
+              onclick="
+                this.nextElementSibling.classList.toggle('hidden');
+                this.querySelector('i').classList.toggle('rotate-180');
+              "
+              class="w-full flex items-center justify-between p-10 text-left group focus:outline-none"
+            >
+              <span
+                class="text-lg font-black text-white group-hover:text-orange-500 transition-colors tracking-tight"
+                >{{ q }}</span
+              >
+              <i
+                class="fa-solid fa-chevron-down text-slate-600 transition-transform duration-500 group-hover:text-orange-500"
+              ></i>
+            </button>
+            <div
+              class="hidden p-10 pt-0 text-slate-400 text-sm leading-relaxed font-medium"
+            >
+              <div class="pt-6 border-t border-white/5">{{ r }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CTA FINAL ============ -->
+    <section
+      class="relative z-10 py-40 bg-slate-900 overflow-hidden border-t border-white/5"
+    >
+      <div
+        class="absolute inset-0 grid-bg opacity-30 pointer-events-none"
+      ></div>
+      <div class="max-w-5xl mx-auto px-4 text-center sa relative z-10">
+        <h2
+          class="text-6xl md:text-9xl font-black text-white tracking-tighter mb-16 leading-[0.8]"
+        >
+          Pare de <br />
+          <span
+            class="text-orange-500 italic underline decoration-white/5 decoration-thickness-2"
+            >perder talentos.</span
+          >
+        </h2>
+        <p
+          class="text-2xl text-slate-400 mb-20 max-w-2xl mx-auto font-medium leading-relaxed tracking-tight"
+        >
+          O mercado não espera. Sua empresa também não deveria. Contrate o
+          próximo nível do seu time agora.
+        </p>
+        <div class="flex flex-col items-center gap-16">
+          <a
+            href="{{ url_for('auth.register') }}"
+            class="btn-shimmer inline-flex items-center gap-6 bg-white text-slate-950 font-black text-3xl px-20 py-10 rounded-full hover:scale-110 transition-all active:scale-95 shadow-[0_0_100px_rgba(255,255,255,0.1)]"
+          >
+            Criar Minha Conta Grátis
+            <i class="fa-solid fa-arrow-right text-orange-600"></i>
+          </a>
+          <div
+            class="flex flex-wrap justify-center gap-12 text-slate-600 text-[11px] font-black uppercase tracking-[0.5em]"
+          >
+            <span class="flex items-center gap-3"
+              ><i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+              Cartão não necessário</span
+            >
+            <span class="flex items-center gap-3"
+              ><i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+              Setup em 60 Segundos</span
+            >
+            <span class="flex items-center gap-3"
+              ><i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+              Cancelamento Livre</span
+            >
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 py-32 border-t border-white/5 relative z-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-4 gap-20 mb-32 text-center md:text-left">
+        <div class="col-span-2">
+          <a
+            href="#"
+            class="flex items-center justify-center md:justify-start gap-4 text-3xl font-black text-white mb-10 group"
+          >
+            <div
+              class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center p-2 group-hover:bg-orange-600 transition-all"
+            >
+              <img
+                src="{{ url_for('static', filename='Logo-maleta.png') }}"
+                alt="Logo"
+                class="w-full h-auto brightness-0 invert"
+              />
+            </div>
+            <span
+              >Bora<span class="text-orange-500 italic">Contratar</span></span
+            >
+          </a>
+          <p
+            class="text-slate-500 max-w-sm mx-auto md:mx-0 text-base leading-relaxed mb-12 font-medium italic"
+          >
+            "Democratizando a IA de ponta para o RH de empresas que constroem o
+            futuro do Brasil."
+          </p>
+          <div class="flex justify-center md:justify-start gap-6">
+            <a
+              href="#"
+              class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 hover:bg-orange-600 hover:text-white transition-all border border-white/5 hover:border-orange-500 shadow-xl"
+              ><i class="fa-brands fa-linkedin-in text-2xl"></i
+            ></a>
+            <a
+              href="#"
+              class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 hover:bg-orange-600 hover:text-white transition-all border border-white/5 hover:border-orange-500 shadow-xl"
+              ><i class="fa-brands fa-instagram text-2xl"></i
+            ></a>
+            <a
+              href="#"
+              class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400 hover:bg-orange-600 hover:text-white transition-all border border-white/5 hover:border-orange-500 shadow-xl"
+              ><i class="fa-brands fa-x-twitter text-2xl"></i
+            ></a>
+          </div>
+        </div>
+        <div>
+          <h5
+            class="text-white font-black text-[10px] uppercase tracking-[0.4em] mb-12 italic opacity-50"
+          >
+            Plataforma
+          </h5>
+          <ul
+            class="space-y-6 text-slate-500 text-sm font-black uppercase tracking-widest"
+          >
+            <li>
+              <a
+                href="#diferenciais"
+                class="hover:text-orange-500 transition-colors"
+                >Funcionalidades</a
+              >
+            </li>
+            <li>
+              <a
+                href="#como-funciona"
+                class="hover:text-orange-500 transition-colors"
+                >Metodologia</a
+              >
+            </li>
+            <li>
+              <a href="#pricing" class="hover:text-orange-500 transition-colors"
+                >Planos e Preços</a
+              >
+            </li>
+            <li>
+              <a href="#" class="hover:text-orange-500 transition-colors"
+                >Cases de Sucesso</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h5
+            class="text-white font-black text-[10px] uppercase tracking-[0.4em] mb-12 italic opacity-50"
+          >
+            Legal
+          </h5>
+          <ul
+            class="space-y-6 text-slate-500 text-sm font-black uppercase tracking-widest"
+          >
+            <li>
+              <a
+                href="{{ url_for('public.privacidade') }}"
+                class="hover:text-orange-500 transition-colors"
+                >Privacidade</a
+              >
+            </li>
+            <li>
+              <a href="#" class="hover:text-orange-500 transition-colors"
+                >Termos de Uso</a
+              >
+            </li>
+            <li>
+              <a href="#" class="hover:text-orange-500 transition-colors"
+                >LGPD Compliance</a
+              >
+            </li>
+            <li>
+              <a href="#" class="hover:text-orange-500 transition-colors"
+                >Cookies</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div
+        class="pt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-12 text-slate-700 text-[10px] font-black uppercase tracking-[0.4em]"
+      >
+        <p>
+          &copy; 2026 Bora Contratar Tecnologia LTDA. Todos os direitos
+          reservados.
+        </p>
+        <div
+          class="flex items-center gap-12 opacity-30 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-1000"
+        >
+          <img
+            src="https://img.shields.io/badge/Made_with_❤_in-Brazil-green?style=flat-square"
+            alt="Brazil"
+            class="h-6"
+          />
+          <img
+            src="https://img.shields.io/badge/AWS-Certified-blue?style=flat-square"
+            alt="AWS"
+            class="h-6"
+          />
+          <img
+            src="https://img.shields.io/badge/Safe-Secure-emerald?style=flat-square"
+            alt="Secure"
+            class="h-6"
+          />
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- Sticky CTA -->
+<div
+  id="stickyCta"
+  class="sticky-cta shadow-[0_-30px_60px_rgba(0,0,0,0.8)] border-t border-orange-500/10"
+>
+  <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+    <div class="hidden sm:flex items-center gap-4 text-white">
+      <div class="relative w-3 h-3">
+        <span
+          class="absolute inset-0 rounded-full bg-orange-600 animate-ping opacity-75"
+        ></span>
+        <span
+          class="relative block w-3 h-3 rounded-full bg-orange-600 shadow-lg shadow-orange-600/50"
+        ></span>
+      </div>
+      <span class="font-black text-[11px] uppercase tracking-[0.4em]"
+        >Oferta Limitada: <span class="text-orange-500">20% OFF</span> no
+        anual</span
+      >
+    </div>
+    <a
+      href="{{ url_for('auth.register') }}"
+      class="btn-shimmer bg-white hover:bg-orange-600 hover:text-white text-slate-950 font-black text-xs px-16 py-4 rounded-full transition-all flex items-center gap-3 active:scale-95 uppercase tracking-widest shadow-2xl"
+    >
+      Começar Agora Grátis
+      <i class="fa-solid fa-chevron-right text-[10px]"></i>
+    </a>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // ... rest of scripts ...
+    // Header scroll effect
+    const header = document.getElementById("mainHeader");
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (window.scrollY > 100) {
+          header.classList.add(
+            "bg-slate-900/80",
+            "backdrop-blur-2xl",
+            "border-b",
+            "border-white/5",
+            "h-16",
+          );
+          header.classList.remove("h-20");
+        } else {
+          header.classList.remove(
+            "bg-slate-900/80",
+            "backdrop-blur-2xl",
+            "border-b",
+            "border-white/5",
+            "h-16",
+          );
+          header.classList.add("h-20");
+        }
+      },
+      { passive: true },
+    );
+
+    // Scroll animations (Intersection Observer)
+    const obsOptions = {
+      threshold: 0.1,
+      rootMargin: "0px 0px -50px 0px",
+    };
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("vis");
+          // Opcional: unobserve se quiser que a animação ocorra apenas uma vez
+          // obs.unobserve(entry.target);
+        }
+      });
+    }, obsOptions);
+
+    document.querySelectorAll(".sa").forEach((el) => obs.observe(el));
+
+    // Pricing Toggle Logic
+    const toggle = document.getElementById("pricingToggle");
+    const proPrice = document.getElementById("proPrice");
+    const proPeriod = document.getElementById("proPeriod");
+    const labelMensal = document.getElementById("labelMensal");
+    const labelAnual = document.getElementById("labelAnual");
+
+    if (toggle) {
+      toggle.addEventListener("change", () => {
+        const isAnnual = toggle.checked;
+        if (isAnnual) {
+          // Celebration Effect!
+          const rect = toggle.getBoundingClientRect();
+          const x = (rect.left + rect.width / 2) / window.innerWidth;
+          const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { x, y },
+            colors: ["#ea580c", "#f97316", "#fbbf24", "#ffffff"],
+            disableForReducedMotion: true,
+          });
+
+          // Secondary burst for more "oomph"
+          setTimeout(() => {
+            confetti({
+              particleCount: 80,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0, y: 0.8 },
+              colors: ["#ea580c", "#ffffff"],
+            });
+            confetti({
+              particleCount: 80,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1, y: 0.8 },
+              colors: ["#ea580c", "#ffffff"],
+            });
+          }, 200);
+
+          // Anual prices (-20%)
+          proPrice.style.opacity = "0";
+          setTimeout(() => {
+            proPrice.innerText = "R$ 77";
+            proPrice.style.opacity = "1";
+            proPeriod.innerText = "/vaga (no anual)";
+          }, 200);
+
+          labelAnual.classList.add("text-orange-500");
+          labelAnual.classList.remove("text-slate-500");
+          labelMensal.classList.add("text-slate-500");
+          labelMensal.classList.remove("text-white");
+        } else {
+          // Monthly prices
+          proPrice.style.opacity = "0";
+          setTimeout(() => {
+            proPrice.innerText = "R$ 97";
+            proPrice.style.opacity = "1";
+            proPeriod.innerText = "/vaga";
+          }, 200);
+
+          labelMensal.classList.add("text-white");
+          labelMensal.classList.remove("text-slate-500");
+          labelAnual.classList.add("text-slate-500");
+          labelAnual.classList.remove("text-orange-500");
+        }
+      });
+    }
+
+    // Sticky CTA visibility
+    const sc = document.getElementById("stickyCta");
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (window.scrollY > 1000) {
+          sc.classList.add("show");
+        } else {
+          sc.classList.remove("show");
+        }
+      },
+      { passive: true },
+    );
+
+    // Smooth scroll improved
+    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+      anchor.addEventListener("click", function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute("href");
+        if (targetId === "#") return;
+
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+          const headerOffset = 100;
+          const elementPosition = targetElement.getBoundingClientRect().top;
+          const offsetPosition =
+            elementPosition + window.pageYOffset - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth",
+          });
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

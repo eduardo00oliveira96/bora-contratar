@@ -25,25 +25,11 @@
 </div>
 {% else %}
 
-{% set hoje = None %}
-{% set amanha = None %}
-{% set hoje_str = '' %}
-{% set amanha_str = '' %}
-{% set ns = namespace(today='') %}
-
 {% for dia, items in grupos.items() %}
-{% set loop_ns = namespace(label=dia) %}
-
-{% if loop.first %}
-  {% set hoje_str = dia %}
-  {% set ns.today = dia %}
-{% endif %}
-
 <div class="mb-6">
   <div class="flex items-center gap-3 mb-3">
     <div class="w-8 h-8 rounded-full
       {% if dia == hoje_str %}bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300
-      {% elif dia %}bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400
       {% else %}bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400{% endif %}
       flex items-center justify-center text-xs font-bold">
       <i class="fa-solid

@@ -87,6 +87,23 @@
   .pdf-controls .page-info { color: #94a3b8; }
   .pdf-controls select { background: #334155; color: #e2e8f0; border-color: #475569; }
 }
+/* Modal de agendamento */
+.modal-agendar {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.6);
+  display: none; align-items: center; justify-content: center;
+  padding: 1rem; backdrop-filter: blur(2px);
+}
+.modal-agendar.active { display: flex; }
+.modal-agendar-box {
+  background: #fff; border-radius: 1rem;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+@media (prefers-color-scheme: dark) {
+  .modal-agendar-box { background: #1e293b; }
+}
 </style>
 {% endblock %}
 
@@ -316,8 +333,11 @@
     <!-- Feedback & Actions -->
     {% if candidato.status in ('Em_Entrevistas', 'Aprovado_Entrevistas') and etapa_atual %}
 
-      {% if etapa_atual.status == 'pendente' %}
-      <!-- Step 0: Schedule Interview (for pendente stages) -->
+      {% set info = etapa_atual.etapas_entrevista %}
+      {% set eh_etapa_gestor = (info and info.responsavel_papel and info.responsavel_papel.lower() == 'gestor') or (info and 'gestor' in info.titulo.lower()) %}
+
+      {% if etapa_atual.status == 'pendente' and not eh_etapa_gestor %}
+      <!-- Step 0: Schedule Interview (for non-gestor pending stages) -->
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400 p-5 transition-colors">
         <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
           <i class="fa-regular fa-calendar mr-1 text-blue-500"></i> Agendar Entrevista
@@ -338,7 +358,7 @@
       </div>
       {% endif %}
 
-      {% if etapa_atual.status in ('pendente', 'agendado') %}
+      {% if (etapa_atual.status == 'agendado') or (etapa_atual.status == 'pendente' and eh_etapa_gestor) %}
       <!-- Step 1: Finalize Interview -->
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-teal-200 dark:border-teal-800 border-l-4 border-l-teal-400 p-5 transition-colors">
         <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
@@ -498,6 +518,52 @@
     </div>
   </div>
 </div>
+
+<!-- Modal: Agendar Entrevista com Gestor -->
+<div id="modalAgendar" class="modal-agendar" onclick="if(event.target===this)fecharModalAgendar()">
+  <div class="modal-agendar-box p-6" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+        <i class="fa-solid fa-calendar-check text-emerald-500 mr-2"></i>
+        Agendar Entrevista com Gestor
+      </h3>
+      <button onclick="fecharModalAgendar()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+      Defina a data e horário da entrevista do candidato com o gestor.
+    </p>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+          Data e horário <span class="text-red-500">*</span>
+        </label>
+        <input type="datetime-local" id="agendadoPara"
+               class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+          Observações (opcional)
+        </label>
+        <textarea id="agendarObs" rows="2"
+                  class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+                  placeholder="Ex: Entrevista técnica, apresentação do projeto..."></textarea>
+      </div>
+      <div id="agendarErro" class="hidden text-sm text-red-600 dark:text-red-400"></div>
+      <div class="flex gap-3 pt-1">
+        <button onclick="fecharModalAgendar()"
+                class="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
+          Cancelar
+        </button>
+        <button onclick="confirmarAgendamento()"
+                class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i> Confirmar e Avançar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -505,6 +571,16 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 var pdfDoc = null, currentZoom = 1.5;
+
+// Detecção: próxima etapa é do gestor?
+var proximaEhGestor = false;
+{% if etapa_atual and etapa_atual.status == 'realizado' %}
+  {% set ordem_atual = etapa_atual.etapas_entrevista.ordem if etapa_atual.etapas_entrevista else 0 %}
+  {% set proxima = progresso | selectattr('etapas_entrevista.ordem', 'greaterthan', ordem_atual) | first %}
+  {% if proxima and proxima.etapas_entrevista and proxima.etapas_entrevista.responsavel_papel and proxima.etapas_entrevista.responsavel_papel.lower() == 'gestor' %}
+    proximaEhGestor = true;
+  {% endif %}
+{% endif %}
 
 function abrirModal(url, titulo, fullscreen) {
   var box = document.querySelector('.modal-box');
@@ -612,6 +688,12 @@ document.getElementById('observacoesRh').addEventListener('blur', function() {
 });
 
 function executarAcao(acao) {
+  // Se aprovar e próxima etapa é do gestor → abre popup de agendamento
+  if (acao === 'aprovar' && proximaEhGestor) {
+    abrirModalAgendar();
+    return;
+  }
+
   var el = document.getElementById(acao === 'contratar' ? 'feedbackTextoContratar' : (acao === 'aprovar' || acao === 'reprovar' || acao === 'talento') ? 'feedbackDecisao' : 'feedbackTexto');
   let feedback = el ? el.value.trim() : '';
   if (!feedback && (acao === 'finalizar' || acao === 'contratar')) {
@@ -622,6 +704,10 @@ function executarAcao(acao) {
   }
   document.getElementById('acaoErro').classList.add('hidden');
 
+  enviarAcao(acao, feedback, null);
+}
+
+function enviarAcao(acao, feedback, agendadoPara) {
   const botoes = document.querySelectorAll('button[onclick*="executarAcao"]');
   botoes.forEach(b => b.disabled = true);
 
@@ -630,10 +716,13 @@ function executarAcao(acao) {
     entrevistaId = entrevistaPendenteId;
   }
 
+  var payload = { candidatura_id: candidaturaId, entrevista_id: entrevistaId, acao: acao, feedback: feedback };
+  if (agendadoPara) payload.agendado_para = agendadoPara;
+
   fetch('{{ url_for("entrevista.kanban_mover") }}', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-    body: JSON.stringify({ candidatura_id: candidaturaId, entrevista_id: entrevistaId, acao: acao, feedback: feedback })
+    body: JSON.stringify(payload)
   })
   .then(r => r.json())
   .then(d => {
@@ -650,6 +739,39 @@ function executarAcao(acao) {
     document.getElementById('acaoErro').classList.remove('hidden');
     botoes.forEach(b => b.disabled = false);
   });
+}
+
+// Modal de agendamento
+function abrirModalAgendar() {
+  document.getElementById('modalAgendar').classList.add('active');
+  document.getElementById('agendadoPara').value = '';
+  document.getElementById('agendarObs').value = '';
+  document.getElementById('agendarErro').classList.add('hidden');
+  document.getElementById('agendadoPara').focus();
+}
+
+function fecharModalAgendar() {
+  document.getElementById('modalAgendar').classList.remove('active');
+  // Reabilitar botões
+  document.querySelectorAll('button[onclick*="executarAcao"]').forEach(b => b.disabled = false);
+}
+
+function confirmarAgendamento() {
+  var data = document.getElementById('agendadoPara').value;
+  var erroEl = document.getElementById('agendarErro');
+  if (!data) {
+    erroEl.textContent = 'Selecione a data e horário da entrevista.';
+    erroEl.classList.remove('hidden');
+    document.getElementById('agendadoPara').focus();
+    return;
+  }
+  erroEl.classList.add('hidden');
+
+  var el = document.getElementById('feedbackDecisao');
+  var feedback = el ? el.value.trim() : '';
+
+  fecharModalAgendar();
+  enviarAcao('aprovar', feedback, data);
 }
 </script>
 {% endblock %}

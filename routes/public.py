@@ -23,8 +23,12 @@ def privacidade():
 
 @public_bp.route('/')
 def index():
+    return render_template('public/landing.html')
+
+@public_bp.route('/vagas')
+def listar_vagas():
     vagas = get_all_vagas(active_only=True)
-    return render_template('public/index.html', vagas=vagas)
+    return render_template('public/vagas.html', vagas=vagas)
 
 @public_bp.route('/vaga/<uuid:id>')
 def vaga_detalhes(id):

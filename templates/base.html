@@ -13,6 +13,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Flatpickr (Date & Time Picker) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css" id="flatpickr-dark-theme" disabled>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'media',
@@ -74,7 +81,7 @@
                 </div>
                 <!-- Navigation -->
                 <nav class="hidden md:flex items-center space-x-6">
-                    <a href="{{ url_for('public.index') }}"
+                    <a href="{{ url_for('public.listar_vagas') }}"
                         class="text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-500 font-medium transition-colors">Vagas
                         Abertas</a>
                     {% if g.usuario %}
@@ -167,6 +174,32 @@
         </div>
     </footer>
 {% endblock %}
+
+<script>
+(function() {
+  var darkCss = document.getElementById('flatpickr-dark-theme');
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function toggleDarkTheme(e) {
+    if (darkCss) darkCss.disabled = !e.matches;
+  }
+  toggleDarkTheme(mq);
+  mq.addEventListener('change', toggleDarkTheme);
+
+  document.addEventListener('DOMContentLoaded', function() {
+    flatpickr('input[type="datetime-local"]', {
+      enableTime: true,
+      time_24hr: true,
+      dateFormat: 'Y-m-d H:i',
+      locale: 'pt',
+      defaultHour: 9,
+      defaultMinute: 0
+    });
+  });
+})();
+</script>
+
+{% block scripts %}{% endblock %}
 
 </body>
 

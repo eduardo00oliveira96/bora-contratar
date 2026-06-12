@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Vagas Abertas | Bora Contratar{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+
+    <div class="text-center mb-12">
+        <h1
+            class="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-4 transition-colors">
+            Encontre sua próxima <span class="text-brand-600 dark:text-brand-500">oportunidade!</span>
+        </h1>
+        <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto transition-colors">
+            Impulsione sua carreira com as melhores empresas. Cadastre-se nas vagas abertas e seja avaliado rapidamente
+            pela nossa plataforma.
+        </p>
+    </div>
+
+    <!-- Filtros -->
+    <div
+        class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-8 flex flex-col md:flex-row gap-4 items-center transition-colors">
+        <div class="relative w-full md:w-1/2">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-slate-400 dark:text-slate-500"></i>
+            </div>
+            <input type="text" id="searchBar"
+                class="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg leading-5 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-sm transition-all"
+                placeholder="Buscar por cargo...">
+        </div>
+        <div class="w-full md:w-1/4">
+            <select
+                class="block w-full pl-3 pr-10 py-2 text-base border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm rounded-lg transition-all">
+                <option value="Todos">Localização</option>
+                <option value="Remoto">Remoto</option>
+                <option value="Presencial">Presencial</option>
+                <option value="Híbrido">Híbrido</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Job Feed -->
+    <div class="space-y-4">
+        {% if not vagas %}
+        <div
+            class="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors">
+            <i class="fa-solid fa-inbox text-4xl text-slate-300 dark:text-slate-600 mb-3"></i>
+            <h3 class="text-lg font-medium text-slate-900 dark:text-white">Nenhuma vaga aberta no momento</h3>
+            <p class="text-slate-500 dark:text-slate-400">Volte novamente mais tarde!</p>
+        </div>
+        {% else %}
+        {% for vaga in vagas %}
+        <div
+            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md transition-all group relative">
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+
+                <div class="flex-1">
+                    <a href="{{ url_for('public.vaga_detalhes', id=vaga.id) }}" class="block focus:outline-none">
+                        <span class="absolute inset-0" aria-hidden="true"></span>
+                        <h2
+                            class="text-xl font-bold text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                            {{ vaga.titulo }}
+                        </h2>
+                    </a>
+
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors">
+                            <i class="fa-solid fa-file-contract mr-1.5 text-slate-400 dark:text-slate-400"></i> {{
+                            vaga.tipo_contrato }}
+                        </span>
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors">
+                            <i class="fa-solid fa-location-dot mr-1.5 text-slate-400 dark:text-slate-400"></i> {{
+                            vaga.local_trabalho }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:items-end md:text-right">
+                    {% if vaga.divulgar_salario and vaga.salario %}
+                    <div
+                        class="text-lg font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-lg transition-colors">
+                        R$ {{ "%.2f"|format(vaga.salario) }}
+                    </div>
+                    {% else %}
+                    <div class="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 pb-2 transition-colors">
+                        Salário a combinar
+                    </div>
+                    {% endif %}
+                    <div
+                        class="mt-4 text-brand-600 dark:text-brand-400 font-medium text-sm flex items-center group-hover:underline transition-colors">
+                        Ver detalhes <i
+                            class="fa-solid fa-arrow-right ml-1 text-xs transition-transform group-hover:translate-x-1"></i>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
